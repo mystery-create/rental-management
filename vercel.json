@@ -1,16 +1,18 @@
 {
+  "version": 2,
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "frontend/**"
+    }
+  },
   "rewrites": [
     {
-      "source": "/api/(.*)",
+      "source": "/api/:match*",
       "destination": "/api/index.js"
     },
     {
-      "source": "/",
-      "destination": "/frontend/index.html"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/frontend/$1"
+      "source": "/:match*",
+      "destination": "/frontend/:match*"
     }
   ]
 }
