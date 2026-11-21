@@ -682,71 +682,36 @@
       const inputEl = document.getElementById('manualActiveSearch');
       const raw = inputEl ? inputEl.value.trim() : '';
       if (!raw) {
-        showToast('Please enter an Order ID, Customer name, or Phone', 'warning');
+        showToast('Please enter an Order ID or customer name', 'warning');
         return;
       }
 
-      const q = raw.toLowerCase();
-      // Extract numeric digits if present (e.g. "5", "#5", "ORD-5", "#ORD-5")
+      // 1. Direct numeric check: if user entered 5, #5, ORD-5, order 5, etc.
       const numMatch = raw.match(/\d+/);
-      const numId = numMatch ? parseInt(numMatch[0], 10) : null;
+      if (numMatch) {
+        const orderId = parseInt(numMatch[0], 10);
+        try {
+          await loadOrderById(orderId);
+          showToast(`Loaded Order #${orderId}`, 'info');
+          return;
+        } catch (e) {
+          console.warn('Direct order lookup by ID failed, trying list search:', e);
+        }
+      }
 
-      // 1. Search in active orders first
-      let found = activeOrders.find(o => 
+      // 2. Search by customer name or phone in allOrdersList
+      const q = raw.toLowerCase();
+      let found = (allOrdersList || []).find(o => 
         String(o.order_id) === q ||
-        (numId !== null && Number(o.order_id) === numId) ||
         (o.customer_name || '').toLowerCase().includes(q) ||
         (o.customer_phone || '').includes(q)
       );
 
       if (found) {
-        document.getElementById('orderSelectDropdown').value = found.order_id;
-        const unretSelect = document.getElementById('unreturnedOrderSelect');
-        if (unretSelect) unretSelect.value = '';
         await loadOrderById(found.order_id);
-        showToast(`Loaded Active Order #${found.order_id} (${found.customer_name})`, 'info');
-        return;
-      }
-
-      // 2. Search in allOrdersList (includes completed, returned, extended, cancelled)
-      if (Array.isArray(allOrdersList)) {
-        found = allOrdersList.find(o => 
-          String(o.order_id) === q ||
-          (numId !== null && Number(o.order_id) === numId) ||
-          (o.customer_name || '').toLowerCase().includes(q) ||
-          (o.customer_phone || '').includes(q)
-        );
-      }
-
-      if (found) {
-        const unretSelect = document.getElementById('unreturnedOrderSelect');
-        const actSelect = document.getElementById('orderSelectDropdown');
-        if (found.status === 'active' || found.status === 'extended') {
-          if (actSelect) actSelect.value = found.order_id;
-          if (unretSelect) unretSelect.value = '';
-        } else {
-          if (unretSelect) unretSelect.value = found.order_id;
-          if (actSelect) actSelect.value = '';
-        }
-        await loadOrderById(found.order_id);
-        const statusLabel = (found.status || 'completed').toUpperCase();
+        const statusLabel = (found.status || 'order').toUpperCase();
         showToast(`Loaded Order #${found.order_id} [${statusLabel}] (${found.customer_name})`, 'info');
         return;
-      }
-
-      // 3. Fallback: If user entered an order number (e.g. 5 or ORD-5), fetch directly from API
-      if (numId !== null) {
-        try {
-          const directRes = await apiGet(`/orders/${numId}`);
-          if (directRes && directRes.success && directRes.order) {
-            await loadOrderById(numId);
-            const statusLabel = (directRes.order.status || 'completed').toUpperCase();
-            showToast(`Loaded Order #${numId} [${statusLabel}] (${directRes.order.customer_name})`, 'info');
-            return;
-          }
-        } catch (e) {
-          console.warn('Direct order lookup failed:', e);
-        }
       }
 
       showToast(`No order found matching "${raw}".`, 'warning');
@@ -763,49 +728,32 @@
     }
 
     async function handleUnreturnedSearch() {
-      const q = document.getElementById('unreturnedSearchInput').value.trim().toLowerCase();
+      const q = document.getElementById('unreturnedSearchInput').value.trim();
       if (!q) {
-        showToast('Please enter a Customer Name, Phone, or Order ID to search missing products', 'warning');
+        showToast('Please enter a Customer Name, Phone, or Order ID', 'warning');
         return;
       }
 
       const numMatch = q.match(/\d+/);
-      const numId = numMatch ? parseInt(numMatch[0], 10) : null;
+      if (numMatch) {
+        const orderId = parseInt(numMatch[0], 10);
+        try {
+          await loadOrderById(orderId, true);
+          showToast(`Loaded Order #${orderId}`, 'info');
+          return;
+        } catch (e) {}
+      }
 
-      // First check within unreturnedOrders
-      let found = unreturnedOrders.find(o => 
-        String(o.order_id) === q ||
-        (numId !== null && Number(o.order_id) === numId) ||
-        (o.customer_name || '').toLowerCase().includes(q) ||
-        (o.customer_phone || '').includes(q)
+      const lower = q.toLowerCase();
+      let found = (allOrdersList || []).find(o => 
+        String(o.order_id) === lower ||
+        (o.customer_name || '').toLowerCase().includes(lower) ||
+        (o.customer_phone || '').includes(lower)
       );
 
-      // If not in unreturnedOrders, also check all returned orders
-      if (!found && Array.isArray(allOrdersList)) {
-        found = allOrdersList.find(o => 
-          (String(o.order_id) === q || (numId !== null && Number(o.order_id) === numId) ||
-           (o.customer_name || '').toLowerCase().includes(q) || (o.customer_phone || '').includes(q))
-        );
-      }
-
       if (found) {
-        const unretSelect = document.getElementById('unreturnedOrderSelect');
-        if (unretSelect) unretSelect.value = found.order_id;
-        const actSelect = document.getElementById('orderSelectDropdown');
-        if (actSelect) actSelect.value = '';
         await loadOrderById(found.order_id, true);
         return;
-      }
-
-      // Fallback direct API fetch if numeric
-      if (numId !== null) {
-        try {
-          const directRes = await apiGet(`/orders/${numId}`);
-          if (directRes && directRes.success && directRes.order) {
-            await loadOrderById(numId, true);
-            return;
-          }
-        } catch (e) {}
       }
 
       showToast(`No order found matching "${q}"`, 'warning');
@@ -814,7 +762,7 @@
     async function loadOrderById(orderId, autoOpenRemaining = false) {
       try {
         const res = await apiGet(`/orders/${orderId}`);
-        if (res.success && res.order) {
+        if (res && res.success && res.order) {
           currentOrder = res.order;
           populateOrderView(currentOrder);
 
@@ -822,10 +770,24 @@
           const actSelect = document.getElementById('orderSelectDropdown');
           const unretSelect = document.getElementById('unreturnedOrderSelect');
           if (currentOrder.status === 'active' || currentOrder.status === 'extended') {
-            if (actSelect) actSelect.value = orderId;
+            if (actSelect) {
+              if (!Array.from(actSelect.options).some(opt => opt.value == orderId)) {
+                actSelect.add(new Option(`#ORD-${orderId} — ${currentOrder.customer_name} (Active)`, orderId));
+              }
+              actSelect.value = orderId;
+            }
             if (unretSelect) unretSelect.value = '';
           } else {
-            if (unretSelect) unretSelect.value = orderId;
+            if (unretSelect) {
+              if (!Array.from(unretSelect.options).some(opt => opt.value == orderId)) {
+                const missingCount = currentOrder.unreturned_items_count || 0;
+                const label = missingCount > 0 
+                  ? `#ORD-${orderId} — ${currentOrder.customer_name} (${missingCount} missing)`
+                  : `#ORD-${orderId} — ${currentOrder.customer_name} (${currentOrder.status.toUpperCase()})`;
+                unretSelect.add(new Option(label, orderId));
+              }
+              unretSelect.value = orderId;
+            }
             if (actSelect) actSelect.value = '';
           }
 
@@ -837,7 +799,7 @@
             // Check if bill exists via GET /api/bills/order/:id
             try {
               const billRes = await apiGet(`/bills/order/${orderId}`);
-              if (billRes.success && billRes.bill) {
+              if (billRes && billRes.success && billRes.bill) {
                 currentBill = billRes.bill;
                 showAlreadyBilledState(currentBill);
               } else {
@@ -862,10 +824,13 @@
               showToast('All items for this order have already been returned to stock!', 'info');
             }
           }
+        } else {
+          throw new Error((res && res.message) || `Order #${orderId} not found`);
         }
       } catch (err) {
         console.error('Failed to load order:', err);
-        showToast(err.message || 'Order not found', 'danger');
+        showToast(err.message || `Order #${orderId} not found`, 'danger');
+        throw err;
       }
     }
 
