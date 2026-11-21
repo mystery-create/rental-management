@@ -312,17 +312,18 @@
       }
 
       nav.innerHTML = sections.map((s, index) => {
-        const isActive = activeSectionId ? s.section_id === activeSectionId : index === 0;
+        const isActive = activeSectionId ? Number(s.section_id) === Number(activeSectionId) : index === 0;
         return `
           <li class="nav-item" role="presentation">
-            <button class="nav-link ${isActive ? 'active fw-bold' : 'text-dark'}" 
+            <button class="nav-link ${isActive ? 'active fw-bold' : ''}" 
                     id="tab-btn-${s.section_id}" 
+                    data-section-id="${s.section_id}"
                     type="button" 
                     role="tab" 
                     onclick="switchSection(${s.section_id})">
               <i class="bi ${getSectionIcon(s.section_name)} me-1"></i>
-              ${escapeHtml(s.section_name)}
-              <span class="badge ${isActive ? 'bg-primary' : 'bg-light text-muted border'} rounded-pill ms-1">${s.item_count || 0}</span>
+              <span>${escapeHtml(s.section_name)}</span>
+              <span class="badge rounded-pill ms-1">${s.item_count || 0}</span>
             </button>
           </li>
         `;
@@ -340,13 +341,18 @@
     }
 
     async function switchSection(sectionId) {
-      activeSectionId = sectionId;
+      activeSectionId = Number(sectionId);
 
       // Update active tab buttons visual state
       const buttons = document.querySelectorAll('#sectionTabsNav .nav-link');
-      buttons.forEach(btn => btn.classList.remove('active', 'fw-bold'));
-      const activeBtn = document.getElementById(`tab-btn-${sectionId}`);
-      if (activeBtn) activeBtn.classList.add('active', 'fw-bold');
+      buttons.forEach(btn => {
+        const btnSecId = Number(btn.getAttribute('data-section-id'));
+        if (btnSecId === activeSectionId) {
+          btn.classList.add('active', 'fw-bold');
+        } else {
+          btn.classList.remove('active', 'fw-bold');
+        }
+      });
 
       // Clear search
       document.getElementById('inventoryItemSearch').value = '';
