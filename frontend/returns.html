@@ -116,12 +116,12 @@
 
               <div>
                 <label for="manualActiveSearch" class="form-label small fw-semibold text-secondary mb-1">
-                  Or Search Active Order (ID / Customer / Phone):
+                  Or Search Any Order by ID, Customer Name, or Phone (Active or Completed):
                 </label>
                 <div class="input-group">
-                  <input type="text" id="manualActiveSearch" class="form-control" placeholder="e.g. Ramesh or 5" onkeydown="if(event.key==='Enter') handleActiveSearch()">
+                  <input type="text" id="manualActiveSearch" class="form-control" placeholder="Search order (e.g. 5, #5, ORD-5, or Ramesh)..." onkeydown="if(event.key==='Enter') handleActiveSearch()">
                   <button class="btn btn-primary" type="button" onclick="handleActiveSearch()" style="background-color: #0f3460; border-color: #0f3460;">
-                    <i class="bi bi-search me-1"></i> Search Active
+                    <i class="bi bi-search me-1"></i> Search Order
                   </button>
                 </div>
               </div>
@@ -678,16 +678,23 @@
       }
     }
 
-    function handleActiveSearch() {
-      const q = document.getElementById('manualActiveSearch').value.trim().toLowerCase();
-      if (!q) {
-        showToast('Please enter an active Order ID or customer name', 'warning');
+    async function handleActiveSearch() {
+      const inputEl = document.getElementById('manualActiveSearch');
+      const raw = inputEl ? inputEl.value.trim() : '';
+      if (!raw) {
+        showToast('Please enter an Order ID, Customer name, or Phone', 'warning');
         return;
       }
 
-      // Find in active orders
-      const found = activeOrders.find(o => 
+      const q = raw.toLowerCase();
+      // Extract numeric digits if present (e.g. "5", "#5", "ORD-5", "#ORD-5")
+      const numMatch = raw.match(/\d+/);
+      const numId = numMatch ? parseInt(numMatch[0], 10) : null;
+
+      // 1. Search in active orders first
+      let found = activeOrders.find(o => 
         String(o.order_id) === q ||
+        (numId !== null && Number(o.order_id) === numId) ||
         (o.customer_name || '').toLowerCase().includes(q) ||
         (o.customer_phone || '').includes(q)
       );
@@ -696,10 +703,53 @@
         document.getElementById('orderSelectDropdown').value = found.order_id;
         const unretSelect = document.getElementById('unreturnedOrderSelect');
         if (unretSelect) unretSelect.value = '';
-        loadOrderById(found.order_id);
-      } else {
-        showToast(`No active order found matching "${q}". Check the "Unreturned Products" search if it was already billed.`, 'warning');
+        await loadOrderById(found.order_id);
+        showToast(`Loaded Active Order #${found.order_id} (${found.customer_name})`, 'info');
+        return;
       }
+
+      // 2. Search in allOrdersList (includes completed, returned, extended, cancelled)
+      if (Array.isArray(allOrdersList)) {
+        found = allOrdersList.find(o => 
+          String(o.order_id) === q ||
+          (numId !== null && Number(o.order_id) === numId) ||
+          (o.customer_name || '').toLowerCase().includes(q) ||
+          (o.customer_phone || '').includes(q)
+        );
+      }
+
+      if (found) {
+        const unretSelect = document.getElementById('unreturnedOrderSelect');
+        const actSelect = document.getElementById('orderSelectDropdown');
+        if (found.status === 'active' || found.status === 'extended') {
+          if (actSelect) actSelect.value = found.order_id;
+          if (unretSelect) unretSelect.value = '';
+        } else {
+          if (unretSelect) unretSelect.value = found.order_id;
+          if (actSelect) actSelect.value = '';
+        }
+        await loadOrderById(found.order_id);
+        const statusLabel = (found.status || 'completed').toUpperCase();
+        showToast(`Loaded Order #${found.order_id} [${statusLabel}] (${found.customer_name})`, 'info');
+        return;
+      }
+
+      // 3. Fallback: If user entered an order number (e.g. 5 or ORD-5), fetch directly from API
+      if (numId !== null) {
+        try {
+          const directRes = await apiGet(`/orders/${numId}`);
+          if (directRes && directRes.success && directRes.order) {
+            await loadOrderById(numId);
+            const statusLabel = (directRes.order.status || 'completed').toUpperCase();
+            showToast(`Loaded Order #${numId} [${statusLabel}] (${directRes.order.customer_name})`, 'info');
+            return;
+          }
+        } catch (e) {
+          console.warn('Direct order lookup failed:', e);
+        }
+      }
+
+      showToast(`No order found matching "${raw}".`, 'warning');
     }
 
     function handleUnreturnedSelectChange(orderId) {
@@ -712,28 +762,29 @@
       }
     }
 
-    function handleUnreturnedSearch() {
+    async function handleUnreturnedSearch() {
       const q = document.getElementById('unreturnedSearchInput').value.trim().toLowerCase();
       if (!q) {
         showToast('Please enter a Customer Name, Phone, or Order ID to search missing products', 'warning');
         return;
       }
 
+      const numMatch = q.match(/\d+/);
+      const numId = numMatch ? parseInt(numMatch[0], 10) : null;
+
       // First check within unreturnedOrders
       let found = unreturnedOrders.find(o => 
         String(o.order_id) === q ||
+        (numId !== null && Number(o.order_id) === numId) ||
         (o.customer_name || '').toLowerCase().includes(q) ||
         (o.customer_phone || '').includes(q)
       );
 
       // If not in unreturnedOrders, also check all returned orders
-      if (!found) {
+      if (!found && Array.isArray(allOrdersList)) {
         found = allOrdersList.find(o => 
-          o.status === 'returned' && (
-            String(o.order_id) === q ||
-            (o.customer_name || '').toLowerCase().includes(q) ||
-            (o.customer_phone || '').includes(q)
-          )
+          (String(o.order_id) === q || (numId !== null && Number(o.order_id) === numId) ||
+           (o.customer_name || '').toLowerCase().includes(q) || (o.customer_phone || '').includes(q))
         );
       }
 
@@ -742,10 +793,22 @@
         if (unretSelect) unretSelect.value = found.order_id;
         const actSelect = document.getElementById('orderSelectDropdown');
         if (actSelect) actSelect.value = '';
-        loadOrderById(found.order_id, true);
-      } else {
-        showToast(`No order with missing items found matching "${q}"`, 'warning');
+        await loadOrderById(found.order_id, true);
+        return;
       }
+
+      // Fallback direct API fetch if numeric
+      if (numId !== null) {
+        try {
+          const directRes = await apiGet(`/orders/${numId}`);
+          if (directRes && directRes.success && directRes.order) {
+            await loadOrderById(numId, true);
+            return;
+          }
+        } catch (e) {}
+      }
+
+      showToast(`No order found matching "${q}"`, 'warning');
     }
 
     async function loadOrderById(orderId, autoOpenRemaining = false) {
@@ -919,12 +982,24 @@
     }
 
     function showAlreadyBilledState(bill) {
-      document.getElementById('alreadyBilledNotice').classList.remove('d-none');
+      const noticeBox = document.getElementById('alreadyBilledNotice');
+      const items = bill ? (bill.items || []) : (currentOrder ? currentOrder.items || [] : []);
+      const missing = getMissingItems(items);
+
+      if (noticeBox) {
+        noticeBox.classList.remove('d-none');
+        if (missing.length === 0) {
+          noticeBox.className = 'alert alert-success mt-3 small mb-0';
+          noticeBox.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i> <strong>Order Completed & Settled:</strong> All rented products have been returned in full to the warehouse. Invoice is available below for viewing or reprinting.';
+        } else {
+          noticeBox.className = 'alert alert-warning mt-3 small mb-0';
+          noticeBox.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-warning me-1"></i> <strong>Partially Returned:</strong> This order has been billed, but customer still has unreturned items pending check-in.';
+        }
+      }
+
       document.getElementById('generateBillBtn').classList.add('d-none');
       document.getElementById('viewExistingBillBtn').classList.remove('d-none');
 
-      const items = bill ? (bill.items || []) : (currentOrder ? currentOrder.items || [] : []);
-      const missing = getMissingItems(items);
       const alertBox = document.getElementById('missingItemsAlertBox');
       if (alertBox) {
         if (missing.length > 0) {
