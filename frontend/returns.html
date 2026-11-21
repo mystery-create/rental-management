@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Returns & Billing - Rental Manager</title>
+  <!-- Bootstrap 5 CDN -->
+  <link href="libs/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons CDN -->
+  <link rel="stylesheet" href="libs/bootstrap-icons/bootstrap-icons.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="app-wrapper">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <a href="dashboard.html" class="sidebar-brand">
+        <i class="bi bi-box-seam-fill"></i>
+        <span>Rental Manager</span>
+      </a>
+
+      <ul class="sidebar-menu">
+        <li class="nav-item">
+          <a href="dashboard.html" class="nav-link">
+            <i class="bi bi-grid-1x2-fill"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="orders.html" class="nav-link">
+            <i class="bi bi-cart-plus-fill"></i>
+            <span>Orders / Bookings</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="returns.html" class="nav-link active">
+            <i class="bi bi-receipt-cutoff"></i>
+            <span>Returns & Billing</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="inventory.html" class="nav-link">
+            <i class="bi bi-boxes"></i>
+            <span>Inventory</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="customers.html" class="nav-link">
+            <i class="bi bi-people-fill"></i>
+            <span>Customers</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="d-flex align-items-center justify-content-between text-white-50">
+          <div class="small">
+            <div class="fw-semibold text-light" id="nav-user-name">Staff User</div>
+            <span class="badge bg-secondary-subtle text-light px-2" id="nav-user-role">STAFF</span>
+          </div>
+          <button class="btn btn-sm btn-outline-danger" onclick="logout()" title="Logout">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      <!-- Top Navbar -->
+      <header class="top-navbar">
+        <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-light d-lg-none p-1 px-2 border" id="sidebar-toggle-btn">
+            <i class="bi bi-list fs-5"></i>
+          </button>
+          <div>
+            <h5 class="mb-0 fw-bold text-dark">Item Return & Final Billing</h5>
+            <small class="text-muted">Process warehouse check-in, overtime fee checks, penalties, and invoices</small>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1" onclick="loadActiveOrdersDropdown()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh Active Orders
+          </button>
+        </div>
+      </header>
+
+      <!-- Page Container -->
+      <main class="page-container">
+        
+        <!-- Two Distinct Order Selection Cards: Active Orders vs Unreturned Products -->
+        <div class="row g-3 mb-4">
+          <!-- 1. Active Orders Return Block -->
+          <div class="col-12 col-xl-6">
+            <div class="custom-card p-3 h-100 border-start border-4 border-primary shadow-sm">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-box-arrow-right text-primary fs-5"></i>
+                  <h6 class="fw-bold mb-0 text-dark">Active Orders for Return</h6>
+                </div>
+                <span class="badge bg-primary-subtle text-primary fw-semibold" id="activeOrdersCountHint">0 active out</span>
+              </div>
+              <p class="text-muted small mb-3">Select an active rental order currently out with customer for warehouse return & billing.</p>
+
+              <div class="mb-3">
+                <label for="orderSelectDropdown" class="form-label small fw-semibold text-secondary mb-1">
+                  Select Active Order (Out for Rent):
+                </label>
+                <select class="form-select" id="orderSelectDropdown" onchange="handleOrderDropdownChange(this.value)">
+                  <option value="">-- Choose an active order --</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="manualActiveSearch" class="form-label small fw-semibold text-secondary mb-1">
+                  Or Search Active Order (ID / Customer / Phone):
+                </label>
+                <div class="input-group">
+                  <input type="text" id="manualActiveSearch" class="form-control" placeholder="e.g. Ramesh or 5" onkeydown="if(event.key==='Enter') handleActiveSearch()">
+                  <button class="btn btn-primary" type="button" onclick="handleActiveSearch()" style="background-color: #0f3460; border-color: #0f3460;">
+                    <i class="bi bi-search me-1"></i> Search Active
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Unreturned / Missing Products Check-in Block -->
+          <div class="col-12 col-xl-6">
+            <div class="custom-card p-3 h-100 border-start border-4 border-warning shadow-sm" style="background-color: #fffdf7;">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>
+                  <h6 class="fw-bold mb-0 text-dark">Unreturned / Missing Products Check-in</h6>
+                </div>
+                <span class="badge bg-warning text-dark fw-bold" id="unreturnedOrdersCountHint">0 pending</span>
+              </div>
+              <p class="text-muted small mb-3">Customer returning missing items from an already returned order? Check items back into stock here.</p>
+
+              <div class="mb-3">
+                <label for="unreturnedOrderSelect" class="form-label small fw-semibold text-secondary mb-1">
+                  Select Order with Missing Products:
+                </label>
+                <select class="form-select" id="unreturnedOrderSelect" onchange="handleUnreturnedSelectChange(this.value)">
+                  <option value="">-- No orders with missing items --</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="unreturnedSearchInput" class="form-label small fw-semibold text-secondary mb-1">
+                  Search Unreturned Items by Customer / Phone / Order ID:
+                </label>
+                <div class="input-group">
+                  <input type="text" id="unreturnedSearchInput" class="form-control" placeholder="Search missing products e.g. Ramesh or 4" onkeydown="if(event.key==='Enter') handleUnreturnedSearch()">
+                  <button class="btn btn-warning fw-bold text-dark" type="button" onclick="handleUnreturnedSearch()">
+                    <i class="bi bi-box-arrow-in-down me-1"></i> Search Missing
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Placeholder when no order is selected -->
+        <div id="noOrderSelectedBox" class="custom-card text-center py-5">
+          <div class="py-4">
+            <i class="bi bi-receipt text-secondary" style="font-size: 3.5rem;"></i>
+            <h5 class="fw-bold mt-3 text-dark">No Order Selected for Return</h5>
+            <p class="text-muted small mb-0">Select an active order above or enter an Order ID to calculate return duration and generate invoice.</p>
+          </div>
+        </div>
+
+        <!-- Return Processing Container (Visible once order selected) -->
+        <div id="returnProcessingBox" class="d-none">
+          <div class="row g-4">
+            
+            <!-- Left Column: Order Summary & Return Controls -->
+            <div class="col-12 col-lg-7">
+              
+              <!-- Order Details Card -->
+              <div class="custom-card mb-4">
+                <div class="card-strip strip-primary"></div>
+                <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="fw-bold mb-0 text-dark">
+                      <span id="orderHeaderDisplayId">#ORD-0</span> &bull; <span id="orderHeaderCustomerName">Customer</span>
+                    </h6>
+                    <small class="text-muted" id="orderHeaderMeta">Details</small>
+                  </div>
+                  <span id="orderHeaderStatusBadge"></span>
+                </div>
+
+                <div class="p-3">
+                  <div class="row g-2 mb-3 small">
+                    <div class="col-6 col-sm-3">
+                      <span class="text-muted d-block">Start Date:</span>
+                      <strong class="text-dark" id="dispStartDate">-</strong>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                      <span class="text-muted d-block">Expected Return:</span>
+                      <strong class="text-dark" id="dispExpectedReturnDate">-</strong>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                      <span class="text-muted d-block">Advance Paid:</span>
+                      <strong class="text-success" id="dispAdvancePaid">₹0.00</strong>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                      <span class="text-muted d-block">Contact Phone:</span>
+                      <strong class="text-dark" id="dispCustomerPhone">-</strong>
+                    </div>
+                  </div>
+
+                  <!-- Booked Items Table with Editable Returning Quantities -->
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold text-dark small text-uppercase mb-0">Rented Products Check-in</h6>
+                    <small class="text-muted">Adjust returning qty if items are damaged or missing</small>
+                  </div>
+                  <div class="table-responsive border rounded">
+                    <table class="table table-sm table-custom mb-0">
+                      <thead>
+                        <tr>
+                          <th>Item</th>
+                          <th>Category</th>
+                          <th class="text-center">Booked</th>
+                          <th class="text-center" style="width: 140px;">Returning Qty</th>
+                          <th class="text-end">Daily Rate</th>
+                        </tr>
+                      </thead>
+                      <tbody id="dispItemsTbody">
+                        <!-- Items rendered here -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Return Timing & Penalty Controls Card -->
+              <div class="custom-card mb-4">
+                <div class="card-strip strip-warning"></div>
+                <div class="p-3 border-bottom">
+                  <h6 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-clock text-warning me-2"></i>Actual Return Timing & Late Check
+                  </h6>
+                </div>
+                <div class="p-3">
+                  <div class="row g-3 mb-3">
+                    <div class="col-12 col-sm-6">
+                      <label for="actualReturnDateInput" class="form-label small fw-semibold">Return Date <span class="text-danger">*</span></label>
+                      <input type="date" class="form-control" id="actualReturnDateInput" required>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                      <label for="returnTimeInput" class="form-label small fw-semibold">Return Time <span class="text-danger">*</span></label>
+                      <input type="time" class="form-control" id="returnTimeInput" value="09:00" required>
+                      <div class="form-text small">Warehouse standard return cutoff is <strong>09:00 AM</strong>.</div>
+                    </div>
+                  </div>
+
+                  <!-- Warning Alert 1: Overtime / After 09:00 AM -->
+                  <div id="overtimeWarningAlert" class="alert alert-warning d-none py-2 px-3 small align-items-center gap-2 mb-2" role="alert">
+                    <i class="bi bi-clock-history fs-5"></i>
+                    <div>
+                      <strong>Return after 09:00 AM:</strong> Extra day will be charged for return timing past the 09:00 AM cutoff.
+                    </div>
+                  </div>
+
+                  <!-- Warning Alert 2: Late return past expected date -->
+                  <div id="latePenaltyWarningAlert" class="alert alert-danger d-none py-2 px-3 small align-items-center gap-2 mb-2" role="alert">
+                    <i class="bi bi-exclamation-octagon-fill fs-5"></i>
+                    <div>
+                      <strong>Late Return Detected:</strong> Returned after expected return date. Late return - Rs.100 penalty applied.
+                    </div>
+                  </div>
+
+                  <!-- Penalty Waive Toggle Box -->
+                  <div id="penaltyWaiveBox" class="p-3 border rounded bg-light mt-3 d-none">
+                    <div class="form-check form-switch mb-2">
+                      <input class="form-check-input" type="checkbox" id="waivePenaltyToggle">
+                      <label class="form-check-label fw-bold small text-dark" for="waivePenaltyToggle">
+                        Waive Penalty (Admin / Manager Discretion)
+                      </label>
+                    </div>
+                    <div id="waiveReasonContainer" class="d-none">
+                      <label for="waiveReasonInput" class="form-label small text-muted">Reason for waiving penalty <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control form-control-sm" id="waiveReasonInput" placeholder="e.g. Regular customer, early notification, warehouse closed">
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right Column: Live Bill Preview & Generate Button -->
+            <div class="col-12 col-lg-5">
+              <div class="custom-card shadow">
+                <div class="card-strip strip-success"></div>
+                <div class="p-3 border-bottom bg-light">
+                  <h6 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-calculator text-success me-2"></i>Live Bill Preview
+                  </h6>
+                </div>
+                <div class="p-3">
+                  <div class="d-flex justify-content-between py-2 border-bottom small">
+                    <span class="text-muted">Rental Start Date:</span>
+                    <strong class="text-dark" id="calcStartDate">-</strong>
+                  </div>
+                  <div class="d-flex justify-content-between py-2 border-bottom small">
+                    <span class="text-muted">Actual Return Date & Time:</span>
+                    <strong class="text-dark" id="calcReturnDateTime">-</strong>
+                  </div>
+                  <div class="d-flex justify-content-between py-2 border-bottom small">
+                    <span class="text-muted">Total Calculated Days:</span>
+                    <strong class="text-primary fs-6" id="calcTotalDays">1 day</strong>
+                  </div>
+                  <div class="d-flex justify-content-between py-2 border-bottom small">
+                    <span class="text-muted">Rental Subtotal:</span>
+                    <strong class="text-dark" id="calcSubtotal">₹0.00</strong>
+                  </div>
+                  <div class="d-flex justify-content-between py-2 border-bottom small" id="calcPenaltyRow">
+                    <span class="text-muted">Late Return Penalty:</span>
+                    <span class="fw-bold" id="calcPenalty">₹0.00</span>
+                  </div>
+                  <div class="d-flex justify-content-between py-2 border-bottom small">
+                    <span class="fw-bold text-dark">Gross Bill Total:</span>
+                    <strong class="text-dark fs-6" id="calcTotalAmount">₹0.00</strong>
+                  </div>
+                  <div class="d-flex justify-content-between py-2 border-bottom small">
+                    <span class="text-muted">Advance Paid Deducted:</span>
+                    <span class="text-success fw-bold" id="calcAdvancePaid">- ₹0.00</span>
+                  </div>
+
+                  <!-- Final Payable / Refundable -->
+                  <div class="p-3 mt-3 rounded bg-light border text-center">
+                    <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Total Bill Balance Due</span>
+                    <h3 class="fw-bold text-primary mb-0" id="calcRemainingAmount">₹0.00</h3>
+                    <small class="text-muted" id="calcPaymentStatusHint">Status: Pending Settlement</small>
+                  </div>
+
+                  <!-- Optional Payment Collection at Return Time -->
+                  <div class="p-3 mt-3 border rounded bg-white shadow-sm" id="returnPaymentBox">
+                    <label for="returnPaymentInput" class="form-label small fw-bold text-dark d-flex justify-content-between align-items-center mb-1">
+                      <span><i class="bi bi-cash-coin text-success me-1"></i>Collect Payment Now (₹):</span>
+                      <button type="button" class="btn btn-link btn-sm text-primary p-0 text-decoration-none small" onclick="fillExactRemainingPayment()">
+                        Collect Full Amount
+                      </button>
+                    </label>
+                    <div class="input-group input-group-sm mb-2">
+                      <span class="input-group-text">₹</span>
+                      <input type="number" min="0" step="1" class="form-control fw-bold text-success" id="returnPaymentInput" value="0" oninput="updateLiveBillPreview()">
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center small text-muted">
+                      <span>Remaining after payment:</span>
+                      <strong class="text-dark fs-6" id="finalBalanceAfterReturnPayment">₹0.00</strong>
+                    </div>
+                    <div class="small text-muted mt-1" style="font-size: 0.75rem;">
+                      * If customer does not pay full amount now, the remaining balance will be recorded as pending.
+                    </div>
+                  </div>
+
+                  <!-- Already Billed Notice (if order is already returned) -->
+                  <div id="alreadyBilledNotice" class="alert alert-info d-none mt-3 small mb-0">
+                    <i class="bi bi-info-circle me-1"></i> A bill has already been generated for this order. You can view or reprint the invoice below.
+                  </div>
+
+                  <!-- Missing Items Alert Box -->
+                  <div id="missingItemsAlertBox" class="alert alert-warning mt-3 p-3 border-warning d-none">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                      <div>
+                        <h6 class="fw-bold mb-1 text-dark"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Unreturned Items Pending</h6>
+                        <small class="text-muted" id="missingItemsCountSummary">Customer still has items out.</small>
+                      </div>
+                      <button type="button" class="btn btn-warning btn-sm fw-bold px-3 shadow-sm" onclick="openReturnRemainingModal()">
+                        <i class="bi bi-box-arrow-in-down me-1"></i> Return Remaining Items
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Generate Bill Button -->
+                  <button type="button" class="btn btn-success w-100 py-2 mt-3 fw-bold d-flex justify-content-center align-items-center gap-2" id="generateBillBtn" onclick="handleGenerateBill()">
+                    <i class="bi bi-receipt"></i>
+                    <span>Generate Final Bill & Check-in Items</span>
+                  </button>
+
+                  <!-- View Existing Bill Button -->
+                  <button type="button" class="btn btn-outline-primary w-100 py-2 mt-2 fw-semibold d-none" id="viewExistingBillBtn" onclick="openBillInvoiceModal()">
+                    <i class="bi bi-printer"></i> View & Print Existing Bill
+                  </button>
+
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Printable Final Bill Modal -->
+  <div class="modal fade" id="billModal" tabindex="-1" aria-labelledby="billModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-light no-print">
+          <h5 class="modal-title fw-bold" id="billModalTitle">
+            <i class="bi bi-receipt-cutoff text-primary me-2"></i>Rental Bill & Tax Invoice
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4 printable-area" id="printableBillContent">
+          <!-- Dynamic Bill Injected Here -->
+        </div>
+        <div class="modal-footer bg-light no-print d-flex justify-content-between">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-warning" id="returnRemainingModalBtn" onclick="openReturnRemainingModal()" style="display: none;">
+              <i class="bi bi-box-arrow-in-down me-1"></i> Return Remaining Items
+            </button>
+            <button type="button" class="btn btn-primary" onclick="printInvoiceElement('printableBillContent')" style="background-color: #0f3460; border-color: #0f3460;">
+              <i class="bi bi-printer-fill me-1"></i> Print Invoice
+            </button>
+            <button type="button" class="btn btn-success" id="recordPaymentModalBtn" onclick="openSettlePaymentModal()" style="display: none;">
+              <i class="bi bi-cash-stack me-1"></i> Settle Remaining Payment
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dedicated Settlement Payment Modal -->
+  <div class="modal fade" id="settlePaymentModal" tabindex="-1" aria-labelledby="settlePaymentModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title fw-bold" id="settlePaymentModalTitle">
+            <i class="bi bi-cash-stack me-2"></i>Settle Remaining Bill Payment
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="settlePaymentForm" onsubmit="handleConfirmPayment(event)">
+          <div class="modal-body p-4">
+            <div class="p-3 bg-light rounded mb-3 border">
+              <div class="d-flex justify-content-between mb-1 small">
+                <span class="text-muted">Order ID:</span>
+                <strong class="text-dark" id="payModalOrderId">#ORD-0</strong>
+              </div>
+              <div class="d-flex justify-content-between mb-1 small">
+                <span class="text-muted">Customer:</span>
+                <strong class="text-dark" id="payModalCustomer">-</strong>
+              </div>
+              <div class="d-flex justify-content-between mb-1 small">
+                <span class="text-muted">Gross Bill Total:</span>
+                <strong class="text-dark" id="payModalTotalBill">₹0.00</strong>
+              </div>
+              <div class="d-flex justify-content-between mb-1 small">
+                <span class="text-muted">Advance Paid:</span>
+                <span class="text-success fw-bold" id="payModalAdvance">- ₹0.00</span>
+              </div>
+              <div class="d-flex justify-content-between pt-2 border-top">
+                <span class="fw-bold text-dark fs-6">Remaining Balance Due:</span>
+                <strong class="text-danger fs-5" id="payModalBalance">₹0.00</strong>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="payModalAmountInput" class="form-label small fw-semibold">Payment Amount to Collect (₹) <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text">₹</span>
+                <input type="number" step="1" min="1" class="form-control form-control-lg fw-bold text-success" id="payModalAmountInput" required>
+              </div>
+              <div class="form-text small">Full payment will mark the bill as <strong>PAID IN FULL</strong>.</div>
+            </div>
+          </div>
+          <div class="modal-footer bg-light d-flex justify-content-between">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-success fw-bold" id="confirmPaymentBtn">
+              <i class="bi bi-check2-circle me-1"></i> Confirm Payment & Mark Paid
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Check-in Remaining / Missing Items Modal -->
+  <div class="modal fade" id="returnRemainingModal" tabindex="-1" aria-labelledby="returnRemainingModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title fw-bold mb-0" id="returnRemainingModalTitle">
+            <i class="bi bi-box-arrow-in-down me-2"></i>Check-in Remaining / Missing Items
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="returnRemainingForm" onsubmit="handleConfirmReturnRemaining(event)">
+          <div class="modal-body p-4">
+            <div class="p-2 mb-3 bg-light rounded border small">
+              <div><strong>Order ID:</strong> <span id="returnRemOrderId">#ORD-0</span></div>
+              <div><strong>Customer:</strong> <span id="returnRemCustomer">-</span></div>
+              <div class="text-muted mt-1">Specify how many of the unreturned items the customer is returning now. Warehouse stock will be updated immediately.</div>
+            </div>
+
+            <div class="table-responsive border rounded mb-3">
+              <table class="table table-sm table-bordered mb-0" style="font-size: 0.88rem;">
+                <thead class="table-light">
+                  <tr>
+                    <th>Item</th>
+                    <th class="text-center" style="width: 70px;">Booked</th>
+                    <th class="text-center" style="width: 75px;">Returned</th>
+                    <th class="text-center text-danger" style="width: 75px;">Missing</th>
+                    <th class="text-center" style="width: 110px;">Return Now</th>
+                  </tr>
+                </thead>
+                <tbody id="returnRemainingItemsTbody">
+                  <!-- Rows injected dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer bg-light d-flex justify-content-between">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-warning fw-bold text-dark" id="confirmReturnRemBtn">
+              <i class="bi bi-check2-circle me-1"></i> Update Stock & Bill
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container position-fixed top-0 end-0 p-3"></div>
+
+  <!-- Bootstrap 5 Bundle JS CDN -->
+  <script src="libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <!-- Custom JS Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    let activeOrders = [];
+    let unreturnedOrders = [];
+    let allOrdersList = [];
+    let currentOrder = null;
+    let currentBill = null;
+    let billModalInstance = null;
+    let settlePaymentModalInstance = null;
+    let returnRemainingModalInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      billModalInstance = new bootstrap.Modal(document.getElementById('billModal'));
+      settlePaymentModalInstance = new bootstrap.Modal(document.getElementById('settlePaymentModal'));
+      returnRemainingModalInstance = new bootstrap.Modal(document.getElementById('returnRemainingModal'));
+
+      // Set default Return Date to today and default time to current time
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+
+      document.getElementById('actualReturnDateInput').value = todayStr;
+      document.getElementById('returnTimeInput').value = `${hours}:${minutes}`;
+
+      // Recalculate preview on timing changes
+      document.getElementById('actualReturnDateInput').addEventListener('change', updateLiveBillPreview);
+      document.getElementById('returnTimeInput').addEventListener('change', updateLiveBillPreview);
+
+      // Penalty waive handlers
+      document.getElementById('waivePenaltyToggle').addEventListener('change', (e) => {
+        const reasonBox = document.getElementById('waiveReasonContainer');
+        if (e.target.checked) {
+          reasonBox.classList.remove('d-none');
+        } else {
+          reasonBox.classList.add('d-none');
+        }
+        updateLiveBillPreview();
+      });
+
+      // Load active orders into dropdown
+      loadActiveOrdersDropdown();
+
+      // Check URL query param ?order_id=...
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramOrderId = urlParams.get('order_id');
+      if (paramOrderId) {
+        loadOrderById(paramOrderId);
+      }
+    });
+
+    async function loadActiveOrdersDropdown() {
+      try {
+        const res = await apiGet('/orders');
+        if (res.success) {
+          allOrdersList = res.orders || [];
+
+          // 1. Filter ONLY Active / Extended Orders
+          activeOrders = allOrdersList.filter(o => o.status === 'active' || o.status === 'extended');
+
+          // 2. Filter Orders with Unreturned / Missing items
+          unreturnedOrders = allOrdersList.filter(o => {
+            if (o.status === 'returned') {
+              if (o.unreturned_items_count !== undefined && o.unreturned_items_count !== null) {
+                return Number(o.unreturned_items_count) > 0;
+              }
+              return false;
+            }
+            return false;
+          });
+
+          // Update Active Orders dropdown (strictly active orders)
+          const activeSelect = document.getElementById('orderSelectDropdown');
+          const activeBadge = document.getElementById('activeOrdersCountHint');
+          if (activeBadge) {
+            activeBadge.textContent = `${activeOrders.length} active out`;
+          }
+
+          if (activeOrders.length === 0) {
+            activeSelect.innerHTML = `<option value="">-- No active orders currently out --</option>`;
+          } else {
+            activeSelect.innerHTML = `
+              <option value="">-- Choose an active order (${activeOrders.length} out) --</option>
+              ${activeOrders.map(o => `
+                <option value="${o.order_id}">
+                  #ORD-${o.order_id} — ${escapeHtml(o.customer_name)} (${formatDate(o.start_date)} to ${formatDate(o.expected_return_date)})
+                </option>
+              `).join('')}
+            `;
+          }
+
+          // Update Unreturned Orders dropdown
+          const unretSelect = document.getElementById('unreturnedOrderSelect');
+          const unretBadge = document.getElementById('unreturnedOrdersCountHint');
+          if (unretBadge) {
+            unretBadge.textContent = `${unreturnedOrders.length} pending`;
+          }
+
+          if (unretSelect) {
+            if (unreturnedOrders.length === 0) {
+              unretSelect.innerHTML = `<option value="">-- No orders with missing items --</option>`;
+            } else {
+              unretSelect.innerHTML = `
+                <option value="">-- Choose order with missing items (${unreturnedOrders.length} pending) --</option>
+                ${unreturnedOrders.map(o => `
+                  <option value="${o.order_id}">
+                    #ORD-${o.order_id} — ${escapeHtml(o.customer_name)} (${o.unreturned_items_count} items missing)
+                  </option>
+                `).join('')}
+              `;
+            }
+          }
+
+          // If currentOrder is already loaded, ensure corresponding dropdown reflects it
+          if (currentOrder) {
+            if (activeOrders.some(o => o.order_id === currentOrder.order_id)) {
+              activeSelect.value = currentOrder.order_id;
+            }
+            if (unreturnedOrders.some(o => o.order_id === currentOrder.order_id) && unretSelect) {
+              unretSelect.value = currentOrder.order_id;
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load active orders dropdown:', err);
+      }
+    }
+
+    function handleOrderDropdownChange(orderId) {
+      const unretSelect = document.getElementById('unreturnedOrderSelect');
+      if (unretSelect) unretSelect.value = '';
+      if (orderId) {
+        loadOrderById(orderId);
+      } else {
+        resetReturnView();
+      }
+    }
+
+    function handleActiveSearch() {
+      const q = document.getElementById('manualActiveSearch').value.trim().toLowerCase();
+      if (!q) {
+        showToast('Please enter an active Order ID or customer name', 'warning');
+        return;
+      }
+
+      // Find in active orders
+      const found = activeOrders.find(o => 
+        String(o.order_id) === q ||
+        (o.customer_name || '').toLowerCase().includes(q) ||
+        (o.customer_phone || '').includes(q)
+      );
+
+      if (found) {
+        document.getElementById('orderSelectDropdown').value = found.order_id;
+        const unretSelect = document.getElementById('unreturnedOrderSelect');
+        if (unretSelect) unretSelect.value = '';
+        loadOrderById(found.order_id);
+      } else {
+        showToast(`No active order found matching "${q}". Check the "Unreturned Products" search if it was already billed.`, 'warning');
+      }
+    }
+
+    function handleUnreturnedSelectChange(orderId) {
+      const actSelect = document.getElementById('orderSelectDropdown');
+      if (actSelect) actSelect.value = '';
+      if (orderId) {
+        loadOrderById(orderId, true);
+      } else {
+        resetReturnView();
+      }
+    }
+
+    function handleUnreturnedSearch() {
+      const q = document.getElementById('unreturnedSearchInput').value.trim().toLowerCase();
+      if (!q) {
+        showToast('Please enter a Customer Name, Phone, or Order ID to search missing products', 'warning');
+        return;
+      }
+
+      // First check within unreturnedOrders
+      let found = unreturnedOrders.find(o => 
+        String(o.order_id) === q ||
+        (o.customer_name || '').toLowerCase().includes(q) ||
+        (o.customer_phone || '').includes(q)
+      );
+
+      // If not in unreturnedOrders, also check all returned orders
+      if (!found) {
+        found = allOrdersList.find(o => 
+          o.status === 'returned' && (
+            String(o.order_id) === q ||
+            (o.customer_name || '').toLowerCase().includes(q) ||
+            (o.customer_phone || '').includes(q)
+          )
+        );
+      }
+
+      if (found) {
+        const unretSelect = document.getElementById('unreturnedOrderSelect');
+        if (unretSelect) unretSelect.value = found.order_id;
+        const actSelect = document.getElementById('orderSelectDropdown');
+        if (actSelect) actSelect.value = '';
+        loadOrderById(found.order_id, true);
+      } else {
+        showToast(`No order with missing items found matching "${q}"`, 'warning');
+      }
+    }
+
+    async function loadOrderById(orderId, autoOpenRemaining = false) {
+      try {
+        const res = await apiGet(`/orders/${orderId}`);
+        if (res.success && res.order) {
+          currentOrder = res.order;
+          populateOrderView(currentOrder);
+
+          // Update active dropdown or unreturned dropdown
+          const actSelect = document.getElementById('orderSelectDropdown');
+          const unretSelect = document.getElementById('unreturnedOrderSelect');
+          if (currentOrder.status === 'active' || currentOrder.status === 'extended') {
+            if (actSelect) actSelect.value = orderId;
+            if (unretSelect) unretSelect.value = '';
+          } else {
+            if (unretSelect) unretSelect.value = orderId;
+            if (actSelect) actSelect.value = '';
+          }
+
+          // If order is already returned or has bill, fetch the bill
+          if (currentOrder.bill) {
+            currentBill = currentOrder.bill;
+            showAlreadyBilledState(currentBill);
+          } else {
+            // Check if bill exists via GET /api/bills/order/:id
+            try {
+              const billRes = await apiGet(`/bills/order/${orderId}`);
+              if (billRes.success && billRes.bill) {
+                currentBill = billRes.bill;
+                showAlreadyBilledState(currentBill);
+              } else {
+                hideAlreadyBilledState();
+              }
+            } catch (e) {
+              hideAlreadyBilledState();
+            }
+          }
+
+          updateLiveBillPreview();
+
+          // If autoOpenRemaining requested (from missing items search/select)
+          if (autoOpenRemaining) {
+            const items = (currentBill && currentBill.items) ? currentBill.items : (currentOrder.items || []);
+            const missing = getMissingItems(items);
+            if (missing.length > 0) {
+              setTimeout(() => {
+                openReturnRemainingModal();
+              }, 300);
+            } else {
+              showToast('All items for this order have already been returned to stock!', 'info');
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load order:', err);
+        showToast(err.message || 'Order not found', 'danger');
+      }
+    }
+
+    function resetReturnView() {
+      currentOrder = null;
+      currentBill = null;
+      document.getElementById('noOrderSelectedBox').classList.remove('d-none');
+      document.getElementById('returnProcessingBox').classList.add('d-none');
+      const actSelect = document.getElementById('orderSelectDropdown');
+      if (actSelect) actSelect.value = '';
+      const unretSelect = document.getElementById('unreturnedOrderSelect');
+      if (unretSelect) unretSelect.value = '';
+    }
+
+    function populateOrderView(order) {
+      document.getElementById('noOrderSelectedBox').classList.add('d-none');
+      document.getElementById('returnProcessingBox').classList.remove('d-none');
+
+      document.getElementById('orderHeaderDisplayId').textContent = `#ORD-${order.order_id}`;
+      document.getElementById('orderHeaderCustomerName').textContent = order.customer_name;
+      document.getElementById('orderHeaderMeta').textContent = `Booked by ${order.created_by_name || 'Staff'} on ${formatDate(order.created_at)}`;
+      document.getElementById('orderHeaderStatusBadge').innerHTML = getStatusBadge(order.status);
+
+      document.getElementById('dispStartDate').textContent = formatDate(order.start_date);
+      document.getElementById('dispExpectedReturnDate').textContent = formatDate(order.expected_return_date);
+      document.getElementById('dispAdvancePaid').textContent = formatCurrency(order.advance_amount);
+      document.getElementById('dispCustomerPhone').textContent = order.customer_phone || '-';
+
+      // Items table
+      const tbody = document.getElementById('dispItemsTbody');
+      const isReturnedOrder = order.status === 'returned';
+
+      tbody.innerHTML = (order.items || []).map(i => {
+        const retQty = (i.returned_quantity !== null && i.returned_quantity !== undefined) ? Number(i.returned_quantity) : Number(i.quantity);
+        const diff = Number(i.quantity) - retQty;
+
+        if (isReturnedOrder) {
+          return `
+            <tr>
+              <td class="fw-bold text-dark">
+                ${escapeHtml(i.item_name)}
+                ${diff > 0 ? `<div class="small text-danger fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>${diff} Missing / Unreturned</div>` : ''}
+              </td>
+              <td><span class="badge bg-light text-secondary border">${escapeHtml(i.section_name || 'Item')}</span></td>
+              <td class="text-center fw-bold">${i.quantity}</td>
+              <td class="text-center" style="width: 140px;">
+                <span class="badge ${diff > 0 ? 'bg-warning text-dark' : 'bg-success'} fs-6 px-2 py-1">
+                  ${retQty} / ${i.quantity} returned
+                </span>
+              </td>
+              <td class="text-end fw-semibold text-primary">${formatCurrency(i.price_per_day_snapshot)}</td>
+            </tr>
+          `;
+        }
+
+        return `
+          <tr>
+            <td class="fw-bold text-dark">
+              ${escapeHtml(i.item_name)}
+              <div class="small text-danger fw-semibold d-none" id="unreturned-badge-${i.item_id}">
+                <i class="bi bi-exclamation-circle me-1"></i>0 Unreturned / Missing
+              </div>
+            </td>
+            <td><span class="badge bg-light text-secondary border">${escapeHtml(i.section_name || 'Item')}</span></td>
+            <td class="text-center fw-bold">${i.quantity}</td>
+            <td class="text-center" style="width: 140px;">
+              <div class="input-group input-group-sm">
+                <input type="number" min="0" max="${i.quantity}" value="${i.quantity}" class="form-control form-control-sm text-center fw-bold return-item-qty-input" data-item-id="${i.item_id}" data-max-qty="${i.quantity}" oninput="handleReturnQtyChange(this, ${i.quantity})">
+                <span class="input-group-text bg-light text-muted px-1" style="font-size: 0.75rem;">/ ${i.quantity}</span>
+              </div>
+            </td>
+            <td class="text-end fw-semibold text-primary">${formatCurrency(i.price_per_day_snapshot)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      // Reset return payment input
+      const retPayInput = document.getElementById('returnPaymentInput');
+      if (retPayInput) retPayInput.value = '0';
+    }
+
+    function handleReturnQtyChange(input, maxQty) {
+      let val = parseInt(input.value, 10);
+      if (isNaN(val) || val < 0) val = 0;
+      if (val > maxQty) val = maxQty;
+      input.value = val;
+
+      const itemId = input.getAttribute('data-item-id');
+      const warnEl = document.getElementById(`unreturned-badge-${itemId}`);
+      if (warnEl) {
+        const diff = maxQty - val;
+        if (diff > 0) {
+          warnEl.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i>${diff} Unreturned / Missing`;
+          warnEl.classList.remove('d-none');
+        } else {
+          warnEl.classList.add('d-none');
+        }
+      }
+    }
+
+    function fillExactRemainingPayment() {
+      const remText = document.getElementById('calcRemainingAmount').textContent.replace(/[^\d.]/g, '');
+      const rem = parseFloat(remText) || 0;
+      document.getElementById('returnPaymentInput').value = rem > 0 ? rem.toFixed(2) : '0';
+      updateLiveBillPreview();
+    }
+
+    function getMissingItems(items) {
+      if (!Array.isArray(items)) return [];
+      return items.filter(i => {
+        const ret = (i.returned_quantity !== null && i.returned_quantity !== undefined) ? Number(i.returned_quantity) : Number(i.quantity);
+        return ret < Number(i.quantity);
+      });
+    }
+
+    function showAlreadyBilledState(bill) {
+      document.getElementById('alreadyBilledNotice').classList.remove('d-none');
+      document.getElementById('generateBillBtn').classList.add('d-none');
+      document.getElementById('viewExistingBillBtn').classList.remove('d-none');
+
+      const items = bill ? (bill.items || []) : (currentOrder ? currentOrder.items || [] : []);
+      const missing = getMissingItems(items);
+      const alertBox = document.getElementById('missingItemsAlertBox');
+      if (alertBox) {
+        if (missing.length > 0) {
+          const totalMissing = missing.reduce((sum, i) => {
+            const ret = (i.returned_quantity !== null && i.returned_quantity !== undefined) ? Number(i.returned_quantity) : Number(i.quantity);
+            return sum + (Number(i.quantity) - ret);
+          }, 0);
+          document.getElementById('missingItemsCountSummary').textContent = `${totalMissing} item(s) across ${missing.length} product(s) still unreturned. Customer returning items now?`;
+          alertBox.classList.remove('d-none');
+        } else {
+          alertBox.classList.add('d-none');
+        }
+      }
+    }
+
+    function hideAlreadyBilledState() {
+      document.getElementById('alreadyBilledNotice').classList.add('d-none');
+      document.getElementById('generateBillBtn').classList.remove('d-none');
+      document.getElementById('viewExistingBillBtn').classList.add('d-none');
+      const alertBox = document.getElementById('missingItemsAlertBox');
+      if (alertBox) alertBox.classList.add('d-none');
+    }
+
+    // ==========================================
+    // LIVE BILL PREVIEW CALCULATIONS
+    // ==========================================
+    function updateLiveBillPreview() {
+      if (!currentOrder) return;
+
+      const actualReturnDate = document.getElementById('actualReturnDateInput').value;
+      const returnTime = document.getElementById('returnTimeInput').value || '09:00';
+
+      const startDateStr = String(currentOrder.start_date).substring(0, 10);
+      const expectedDateStr = String(currentOrder.expected_return_date).substring(0, 10);
+
+      document.getElementById('calcStartDate').textContent = formatDate(startDateStr);
+      document.getElementById('calcReturnDateTime').textContent = `${formatDate(actualReturnDate)} at ${returnTime}`;
+
+      // Calculate days difference
+      const start = new Date(startDateStr + 'T00:00:00Z');
+      const actual = new Date(actualReturnDate + 'T00:00:00Z');
+
+      const diffMs = actual.getTime() - start.getTime();
+      let total_days = Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+
+      // Check returnTime cutoff (09:00 AM)
+      let isAfterCutoff = false;
+      if (returnTime) {
+        const [h, m] = returnTime.split(':').map(Number);
+        const returnMins = (h || 0) * 60 + (m || 0);
+        if (returnMins > 9 * 60) {
+          isAfterCutoff = true;
+          total_days += 1;
+        }
+      }
+
+      // Minimum 1 day
+      if (total_days === 0) {
+        total_days = 1;
+      }
+
+      // Overtime Warning
+      const overtimeAlert = document.getElementById('overtimeWarningAlert');
+      if (isAfterCutoff) {
+        overtimeAlert.classList.remove('d-none');
+        overtimeAlert.classList.add('d-flex');
+      } else {
+        overtimeAlert.classList.add('d-none');
+        overtimeAlert.classList.remove('d-flex');
+      }
+
+      // Check late return penalty (actual return date > expected return date)
+      const isLate = actualReturnDate > expectedDateStr;
+      const lateAlert = document.getElementById('latePenaltyWarningAlert');
+      const waiveBox = document.getElementById('penaltyWaiveBox');
+
+      let penalty = 0;
+      if (isLate) {
+        lateAlert.classList.remove('d-none');
+        lateAlert.classList.add('d-flex');
+        waiveBox.classList.remove('d-none');
+
+        const isWaived = document.getElementById('waivePenaltyToggle').checked;
+        if (!isWaived) {
+          penalty = 100.00;
+        }
+      } else {
+        lateAlert.classList.add('d-none');
+        lateAlert.classList.remove('d-flex');
+        waiveBox.classList.add('d-none');
+      }
+
+      // Calculate items subtotal
+      let subtotal = 0;
+      for (const item of (currentOrder.items || [])) {
+        const qty = Number(item.quantity) || 0;
+        const rate = Number(item.price_per_day_snapshot) || 0;
+        subtotal += qty * rate * total_days;
+      }
+      subtotal = Number(subtotal.toFixed(2));
+
+      const totalAmount = Number((subtotal + penalty).toFixed(2));
+      const advancePaid = Number(currentOrder.advance_amount || 0);
+      let remainingAmount = Number((totalAmount - advancePaid).toFixed(2));
+
+      if (remainingAmount <= 0) {
+        remainingAmount = 0.00;
+      }
+
+      // Update Preview Displays
+      document.getElementById('calcTotalDays').textContent = `${total_days} ${total_days === 1 ? 'day' : 'days'}`;
+      document.getElementById('calcSubtotal').textContent = formatCurrency(subtotal);
+
+      const penaltyRow = document.getElementById('calcPenalty');
+      if (penalty > 0) {
+        penaltyRow.textContent = `+ ${formatCurrency(penalty)} (Late fee)`;
+        penaltyRow.className = 'text-danger fw-bold';
+      } else if (isLate && document.getElementById('waivePenaltyToggle').checked) {
+        penaltyRow.textContent = 'Waived (₹0.00)';
+        penaltyRow.className = 'text-success fw-bold';
+      } else {
+        penaltyRow.textContent = '₹0.00';
+        penaltyRow.className = 'text-muted';
+      }
+
+      document.getElementById('calcTotalAmount').textContent = formatCurrency(totalAmount);
+      document.getElementById('calcAdvancePaid').textContent = `- ${formatCurrency(advancePaid)}`;
+      document.getElementById('calcRemainingAmount').textContent = formatCurrency(remainingAmount);
+
+      // Check payment collected now
+      const retPayInput = document.getElementById('returnPaymentInput');
+      const retPay = retPayInput ? (parseFloat(retPayInput.value) || 0) : 0;
+      const finalAfterPay = Math.max(0, Number((remainingAmount - retPay).toFixed(2)));
+      const balEl = document.getElementById('finalBalanceAfterReturnPayment');
+      if (balEl) balEl.textContent = formatCurrency(finalAfterPay);
+
+      const statusHint = document.getElementById('calcPaymentStatusHint');
+      if (remainingAmount <= 0 || finalAfterPay <= 0) {
+        statusHint.textContent = 'Status: Fully Covered & Settled';
+        statusHint.className = 'text-success small fw-semibold';
+      } else if (retPay > 0 || advancePaid > 0) {
+        statusHint.textContent = `Status: Partial (₹${finalAfterPay.toFixed(2)} will remain due)`;
+        statusHint.className = 'text-warning small fw-semibold';
+      } else {
+        statusHint.textContent = 'Status: Pending Collection on Return';
+        statusHint.className = 'text-danger small fw-semibold';
+      }
+    }
+
+    // ==========================================
+    // GENERATE BILL ACTION
+    // ==========================================
+    async function handleGenerateBill() {
+      if (!currentOrder) return;
+
+      const order_id = currentOrder.order_id;
+      const actual_return_date = document.getElementById('actualReturnDateInput').value;
+      const return_time = document.getElementById('returnTimeInput').value || '09:00';
+      const penalty_waived = document.getElementById('waivePenaltyToggle').checked;
+      const waive_reason = document.getElementById('waiveReasonInput').value.trim();
+
+      if (penalty_waived && !waive_reason) {
+        showToast('Please provide a reason for waiving the late penalty.', 'warning');
+        document.getElementById('waiveReasonInput').focus();
+        return;
+      }
+
+      // Collect returning quantities per item
+      const returned_items = [];
+      document.querySelectorAll('.return-item-qty-input').forEach(input => {
+        const itemId = Number(input.getAttribute('data-item-id'));
+        const maxQty = Number(input.getAttribute('data-max-qty'));
+        const val = parseInt(input.value, 10);
+        returned_items.push({
+          item_id: itemId,
+          returned_quantity: isNaN(val) ? maxQty : Math.max(0, Math.min(maxQty, val))
+        });
+      });
+
+      // Amount paid right now upon returning
+      const retPayInput = document.getElementById('returnPaymentInput');
+      const amount_paid_at_return = retPayInput ? (parseFloat(retPayInput.value) || 0) : 0;
+
+      const btn = document.getElementById('generateBillBtn');
+      const origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Processing Return...';
+
+      try {
+        const payload = {
+          order_id,
+          actual_return_date,
+          return_time,
+          penalty_waived,
+          waive_reason: penalty_waived ? waive_reason : undefined,
+          returned_items,
+          amount_paid_at_return
+        };
+
+        const res = await apiPost('/bills/generate', payload);
+
+        if (res.success && res.bill) {
+          showToast('Bill generated and return processed successfully!', 'success');
+          currentBill = res.bill;
+          showAlreadyBilledState(currentBill);
+          openBillInvoiceModal(currentBill);
+          loadActiveOrdersDropdown(); // refresh dropdown
+        }
+      } catch (err) {
+        console.error('Generate bill error:', err);
+        showToast(err.message || 'Failed to generate bill', 'danger');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+      }
+    }
+
+    // ==========================================
+    // PRINTABLE INVOICE MODAL
+    // ==========================================
+    async function openBillInvoiceModal(billData = null) {
+      if (!billData && currentOrder) {
+        // Fetch fresh bill details
+        try {
+          const res = await apiGet(`/bills/order/${currentOrder.order_id}`);
+          if (res.success) {
+            billData = res.bill;
+            currentBill = billData;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      const bill = billData || currentBill;
+      if (!bill) {
+        showToast('No bill found to print.', 'warning');
+        return;
+      }
+
+      const container = document.getElementById('printableBillContent');
+      const items = bill.items || (currentOrder ? currentOrder.items : []);
+      const payments = bill.payments || [];
+
+      // Determine stamp class
+      let stampClass = 'stamp-pending';
+      let stampText = 'PENDING';
+      if (bill.payment_status === 'paid' || Number(bill.remaining_amount) <= 0) {
+        stampClass = 'stamp-paid';
+        stampText = 'PAID IN FULL';
+      } else if (bill.payment_status === 'partial') {
+        stampClass = 'stamp-partial';
+        stampText = 'PARTIAL PAYMENT';
+      }
+
+      container.innerHTML = `
+        <div class="bill-container">
+          
+          <!-- Company & Invoice Header -->
+          <div class="bill-header d-flex justify-content-between align-items-start">
+            <div>
+              <div class="bill-company-name">RENTAL MANAGER</div>
+              <div class="text-muted small">Warehouse, Event & Equipment Rental Services</div>
+              <div class="text-muted small">Phone: +91 98765 43210 &bull; Email: rentals@warehouse.internal</div>
+            </div>
+            <div class="text-end">
+              <h4 class="fw-bold text-dark mb-1">RENTAL INVOICE</h4>
+              <div class="fw-semibold text-primary">Invoice #INV-BILL-${bill.bill_id}</div>
+              <div class="small text-muted">Date: ${formatDateTime(bill.generated_at)}</div>
+              <div class="mt-2">
+                <span class="bill-status-stamp ${stampClass}">${stampText}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metadata Box (Billed To & Order Details) -->
+          <div class="row g-3 mb-4">
+            <div class="col-6">
+              <div class="bill-meta-box h-100">
+                <span class="text-muted small fw-bold text-uppercase d-block mb-1">Billed To (Customer):</span>
+                <strong class="fs-6 text-dark d-block">${escapeHtml(bill.customer_name)}</strong>
+                <div class="small text-muted"><i class="bi bi-telephone me-1"></i>${escapeHtml(bill.customer_phone)}</div>
+                <div class="small text-muted"><i class="bi bi-geo-alt me-1"></i>${escapeHtml(bill.customer_address || 'No address specified')}</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="bill-meta-box h-100">
+                <span class="text-muted small fw-bold text-uppercase d-block mb-1">Booking Reference:</span>
+                <div><strong>Order ID:</strong> #ORD-${bill.order_id}</div>
+                <div><strong>Start Date:</strong> ${formatDate(bill.start_date)}</div>
+                <div><strong>Return Date:</strong> ${formatDate(bill.actual_return_date || bill.expected_return_date)}</div>
+                <div><strong>Rental Duration:</strong> ${bill.total_days} ${bill.total_days === 1 ? 'day' : 'days'}</div>
+                <div class="text-muted small">Processed by: ${bill.generated_by_name || 'Staff'}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Itemized Breakdown Table -->
+          <div class="table-responsive mb-4">
+            <table class="table table-bordered table-sm mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 40px;" class="text-center">#</th>
+                  <th>Rental Item Description</th>
+                  <th class="text-center" style="width: 80px;">Booked</th>
+                  <th class="text-center" style="width: 85px;">Returned</th>
+                  <th class="text-end" style="width: 100px;">Daily Rate</th>
+                  <th class="text-center" style="width: 70px;">Days</th>
+                  <th class="text-end" style="width: 110px;">Amount (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${items.map((item, idx) => {
+                  const lineTotal = item.quantity * item.price_per_day_snapshot * bill.total_days;
+                  const retQty = (item.returned_quantity !== null && item.returned_quantity !== undefined) ? Number(item.returned_quantity) : Number(item.quantity);
+                  const diff = Number(item.quantity) - retQty;
+                  return `
+                    <tr>
+                      <td class="text-center text-muted">${idx + 1}</td>
+                      <td>
+                        <strong>${escapeHtml(item.item_name)}</strong>
+                        <span class="text-muted small ms-1">(${escapeHtml(item.section_name || 'Item')})</span>
+                        ${diff > 0 ? `<div class="small text-danger fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>${diff} unreturned / damaged</div>` : ''}
+                      </td>
+                      <td class="text-center">${item.quantity}</td>
+                      <td class="text-center fw-bold ${diff > 0 ? 'text-warning' : 'text-success'}">${retQty}</td>
+                      <td class="text-end">${formatCurrency(item.price_per_day_snapshot)}</td>
+                      <td class="text-center">${bill.total_days}</td>
+                      <td class="text-end fw-semibold">${formatCurrency(lineTotal)}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Financial Calculation Summary Table -->
+          <div class="row justify-content-end mb-4">
+            <div class="col-12 col-md-6">
+              <table class="table table-sm bill-summary-table mb-0">
+                <tr>
+                  <td class="text-muted">Items Subtotal:</td>
+                  <td class="text-end fw-semibold">${formatCurrency(bill.subtotal)}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">
+                    Late Return Penalty:
+                    ${bill.penalty_waived ? '<span class="badge bg-success-subtle text-success ms-1">Waived</span>' : ''}
+                  </td>
+                  <td class="text-end ${bill.penalty_amount > 0 ? 'text-danger fw-bold' : 'text-muted'}">
+                    ${bill.penalty_waived ? '₹0.00' : formatCurrency(bill.penalty_amount)}
+                  </td>
+                </tr>
+                ${bill.penalty_waived && bill.waive_reason ? `
+                  <tr>
+                    <td colspan="2" class="text-muted small py-0 text-end">
+                      <em>Waive Reason: ${escapeHtml(bill.waive_reason)}</em>
+                    </td>
+                  </tr>
+                ` : ''}
+                <tr class="border-top">
+                  <td class="fw-bold text-dark fs-6">Gross Invoice Total:</td>
+                  <td class="text-end fw-bold text-dark fs-6">${formatCurrency(bill.total_amount)}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Advance Paid at Booking:</td>
+                  <td class="text-end text-success fw-bold">- ${formatCurrency(bill.advance_paid)}</td>
+                </tr>
+                ${(() => {
+                  const settlementPaid = payments
+                    .filter(p => p.payment_type !== 'advance')
+                    .reduce((sum, p) => sum + Number(p.amount), 0);
+                  return settlementPaid > 0 ? `
+                    <tr>
+                      <td class="text-muted">Settlement Payment(s):</td>
+                      <td class="text-end text-success fw-bold">- ${formatCurrency(settlementPaid)}</td>
+                    </tr>
+                  ` : '';
+                })()}
+                <tr class="border-top table-light">
+                  <td class="fw-bold ${Number(bill.remaining_amount) <= 0 ? 'text-success' : 'text-primary'} fs-5">
+                    ${Number(bill.remaining_amount) <= 0 ? 'Net Balance Due (PAID IN FULL):' : 'Remaining Balance Due:'}
+                  </td>
+                  <td class="text-end fw-bold ${Number(bill.remaining_amount) <= 0 ? 'text-success' : 'text-primary'} fs-5">
+                    ${formatCurrency(bill.remaining_amount)}
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- Payment History Breakdown (if payments exist) -->
+          ${payments.length > 0 ? `
+            <div class="mb-4">
+              <span class="text-muted small fw-bold text-uppercase d-block mb-1">Payment Records:</span>
+              <ul class="list-group list-group-flush border rounded small">
+                ${payments.map(p => `
+                  <li class="list-group-item d-flex justify-content-between py-1">
+                    <span><i class="bi bi-check-circle-fill text-success me-1"></i>${p.payment_type.toUpperCase()} payment on ${formatDateTime(p.payment_date)}</span>
+                    <strong class="text-dark">${formatCurrency(p.amount)}</strong>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          ` : ''}
+
+          <!-- Terms & Signature Footer -->
+          <div class="row pt-4 border-top mt-4 text-muted small">
+            <div class="col-7">
+              <p class="mb-1"><strong>Terms & Conditions:</strong></p>
+              <ul class="ps-3 mb-0" style="font-size: 0.78rem;">
+                <li>All rented equipment returned inspected and restored to inventory.</li>
+                <li>Settlement payments must be cleared upon check-in.</li>
+                <li>Computer-generated bill; requires no physical stamp.</li>
+              </ul>
+            </div>
+            <div class="col-5 text-end">
+              <div style="height: 40px;"></div>
+              <div class="border-top pt-1 d-inline-block px-4">
+                Authorized Signatory / Warehouse Manager
+              </div>
+            </div>
+          </div>
+
+        </div>
+      `;
+
+      // Show/hide Settle Remaining Payment button in modal footer
+      const recordBtn = document.getElementById('recordPaymentModalBtn');
+      if (Number(bill.remaining_amount) > 0) {
+        recordBtn.style.display = 'inline-block';
+      } else {
+        recordBtn.style.display = 'none';
+      }
+
+      // Show/hide Return Remaining Items button
+      const returnRemBtn = document.getElementById('returnRemainingModalBtn');
+      const missing = getMissingItems(items);
+      if (returnRemBtn) {
+        if (missing.length > 0) {
+          returnRemBtn.style.display = 'inline-block';
+        } else {
+          returnRemBtn.style.display = 'none';
+        }
+      }
+
+      billModalInstance.show();
+    }
+
+    // ==========================================
+    // CHECK-IN REMAINING / MISSING ITEMS
+    // ==========================================
+    function openReturnRemainingModal() {
+      const bill = currentBill;
+      const order = currentOrder;
+      const orderId = bill ? bill.order_id : (order ? order.order_id : null);
+      if (!orderId) {
+        showToast('No order selected.', 'warning');
+        return;
+      }
+
+      const items = (bill && bill.items) ? bill.items : (order && order.items ? order.items : []);
+      const missing = getMissingItems(items);
+
+      if (missing.length === 0) {
+        showToast('All items for this order have already been returned in full!', 'info');
+        return;
+      }
+
+      document.getElementById('returnRemOrderId').textContent = `#ORD-${orderId}`;
+      document.getElementById('returnRemCustomer').textContent = (bill ? bill.customer_name : (order ? order.customer_name : 'Customer'));
+
+      const tbody = document.getElementById('returnRemainingItemsTbody');
+      tbody.innerHTML = missing.map(i => {
+        const booked = Number(i.quantity);
+        const returned = (i.returned_quantity !== null && i.returned_quantity !== undefined) ? Number(i.returned_quantity) : 0;
+        const missingQty = Math.max(0, booked - returned);
+
+        return `
+          <tr>
+            <td>
+              <strong class="text-dark">${escapeHtml(i.item_name)}</strong>
+              <span class="badge bg-light text-secondary border ms-1">${escapeHtml(i.section_name || 'Item')}</span>
+            </td>
+            <td class="text-center">${booked}</td>
+            <td class="text-center text-success fw-bold">${returned}</td>
+            <td class="text-center text-danger fw-bold">${missingQty}</td>
+            <td class="text-center">
+              <input type="number" min="1" max="${missingQty}" value="${missingQty}" class="form-control form-control-sm text-center fw-bold return-rem-qty-input" data-item-id="${i.item_id}" data-max-missing="${missingQty}">
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      if (billModalInstance) billModalInstance.hide();
+      setTimeout(() => {
+        returnRemainingModalInstance.show();
+      }, 350);
+    }
+
+    async function handleConfirmReturnRemaining(e) {
+      e.preventDefault();
+      const bill = currentBill;
+      const order = currentOrder;
+      const orderId = bill ? bill.order_id : (order ? order.order_id : null);
+      if (!orderId) return;
+
+      const itemsPayload = [];
+      document.querySelectorAll('.return-rem-qty-input').forEach(input => {
+        const itemId = Number(input.getAttribute('data-item-id'));
+        const maxMissing = Number(input.getAttribute('data-max-missing'));
+        const val = parseInt(input.value, 10);
+        if (!isNaN(val) && val > 0) {
+          itemsPayload.push({
+            item_id: itemId,
+            quantity_to_return: Math.min(val, maxMissing)
+          });
+        }
+      });
+
+      if (itemsPayload.length === 0) {
+        showToast('Please specify a positive quantity to return.', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('confirmReturnRemBtn');
+      const origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Updating Stock...';
+
+      try {
+        const res = await apiPost('/bills/return-remaining', {
+          order_id: orderId,
+          items: itemsPayload
+        });
+
+        if (res.success) {
+          showToast(res.message || 'Warehouse stock updated and items checked in!', 'success');
+          returnRemainingModalInstance.hide();
+
+          // Refresh bill and order data
+          const orderRes = await apiGet(`/orders/${orderId}`);
+          if (orderRes.success && orderRes.order) {
+            currentOrder = orderRes.order;
+            populateOrderView(currentOrder);
+          }
+
+          const billRes = await apiGet(`/bills/order/${orderId}`);
+          if (billRes.success && billRes.bill) {
+            currentBill = billRes.bill;
+            showAlreadyBilledState(currentBill);
+            setTimeout(() => {
+              openBillInvoiceModal(currentBill);
+            }, 350);
+          }
+
+          loadActiveOrdersDropdown(); // Refresh dropdown
+        }
+      } catch (err) {
+        console.error('Error returning remaining items:', err);
+        showToast(err.message || 'Failed to return remaining items', 'danger');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+      }
+    }
+
+    // ==========================================
+    // RECORD SETTLEMENT PAYMENT (MODAL)
+    // ==========================================
+    function openSettlePaymentModal() {
+      if (!currentBill) return;
+
+      const rem = Number(currentBill.remaining_amount) || 0;
+      document.getElementById('payModalOrderId').textContent = `#ORD-${currentBill.order_id}`;
+      document.getElementById('payModalCustomer').textContent = currentBill.customer_name || 'Customer';
+      document.getElementById('payModalTotalBill').textContent = formatCurrency(currentBill.total_amount);
+      document.getElementById('payModalAdvance').textContent = `- ${formatCurrency(currentBill.advance_paid)}`;
+      document.getElementById('payModalBalance').textContent = formatCurrency(rem);
+      document.getElementById('payModalAmountInput').value = rem > 0 ? rem.toFixed(2) : '0';
+
+      // Hide bill modal and show payment modal
+      billModalInstance.hide();
+      setTimeout(() => {
+        settlePaymentModalInstance.show();
+      }, 350);
+    }
+
+    async function handleConfirmPayment(e) {
+      e.preventDefault();
+      if (!currentBill) return;
+
+      const rem = Number(currentBill.remaining_amount) || 0;
+      const payAmount = parseFloat(document.getElementById('payModalAmountInput').value);
+
+      if (isNaN(payAmount) || payAmount <= 0) {
+        showToast('Please enter a valid positive payment amount.', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('confirmPaymentBtn');
+      const origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Recording Payment...';
+
+      try {
+        const res = await apiPost('/bills/payment', {
+          order_id: currentBill.order_id,
+          amount: payAmount,
+          payment_type: payAmount >= rem ? 'remaining' : 'partial'
+        });
+
+        if (res.success) {
+          showToast('Payment recorded successfully! Generating updated final bill...', 'success');
+          settlePaymentModalInstance.hide();
+
+          // Reload updated bill details and refresh invoice view
+          const billRes = await apiGet(`/bills/order/${currentBill.order_id}`);
+          if (billRes.success && billRes.bill) {
+            currentBill = billRes.bill;
+            setTimeout(() => {
+              openBillInvoiceModal(currentBill);
+            }, 350);
+          }
+
+          loadActiveOrdersDropdown(); // Refresh active orders list
+        }
+      } catch (err) {
+        console.error('Record payment error:', err);
+        showToast(err.message || 'Failed to record payment', 'danger');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,618 @@
+/* ============================================================
+   Warehouse & Rental Bill Management System
+   Custom Stylesheet (Bootstrap 5 Enhancements)
+   ============================================================ */
+
+:root {
+  --sidebar-width: 260px;
+  --sidebar-bg: #1a1a2e;
+  --sidebar-hover: #16213e;
+  --sidebar-active: #0f3460;
+  --sidebar-accent: #e94560;
+  --primary-color: #0f3460;
+  --secondary-color: #e94560;
+  --card-border-radius: 12px;
+  --transition-speed: 0.25s;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: #f4f6fb;
+  color: #2b2d42;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   Sidebar Layout
+   ============================================================ */
+.app-wrapper {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--sidebar-bg);
+  color: #edf2f4;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: all var(--transition-speed) ease-in-out;
+  z-index: 1040;
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+}
+
+.sidebar-brand {
+  padding: 1.25rem 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+}
+
+.sidebar-brand i {
+  color: var(--sidebar-accent);
+  font-size: 1.5rem;
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 1rem 0.75rem;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.sidebar-menu .nav-item {
+  margin-bottom: 0.35rem;
+}
+
+.sidebar-menu .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 1rem;
+  color: #a2a8d3;
+  border-radius: 8px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all var(--transition-speed);
+}
+
+.sidebar-menu .nav-link i {
+  font-size: 1.2rem;
+  width: 24px;
+  text-align: center;
+}
+
+.sidebar-menu .nav-link:hover {
+  background-color: var(--sidebar-hover);
+  color: #ffffff;
+  transform: translateX(4px);
+}
+
+.sidebar-menu .nav-link.active {
+  background-color: var(--sidebar-active);
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(15, 52, 96, 0.5);
+  border-left: 4px solid var(--sidebar-accent);
+}
+
+.sidebar-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================================
+   Main Content Layout
+   ============================================================ */
+.main-wrapper {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.top-navbar {
+  background: #ffffff;
+  height: 64px;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.page-container {
+  padding: 1.75rem;
+  flex-grow: 1;
+}
+
+/* ============================================================
+   Cards & Header Strips
+   ============================================================ */
+.custom-card {
+  background: #ffffff;
+  border-radius: var(--card-border-radius);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+.custom-card.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.card-strip {
+  height: 4px;
+  width: 100%;
+}
+
+.card-strip.strip-primary { background: linear-gradient(90deg, #0f3460, #1a1a2e); }
+.card-strip.strip-success { background: linear-gradient(90deg, #10b981, #059669); }
+.card-strip.strip-warning { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.card-strip.strip-danger  { background: linear-gradient(90deg, #ef4444, #dc2626); }
+.card-strip.strip-info    { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+.card-strip.strip-purple  { background: linear-gradient(90deg, #8b5cf6, #6d28d9); }
+
+.stat-card-body {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stat-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+}
+
+.stat-icon.icon-blue   { background-color: #ebf4ff; color: #2563eb; }
+.stat-icon.icon-green  { background-color: #ecfdf5; color: #059669; }
+.stat-icon.icon-amber  { background-color: #fffbeb; color: #d97706; }
+.stat-icon.icon-red    { background-color: #fef2f2; color: #dc2626; }
+.stat-icon.icon-purple { background-color: #f5f3ff; color: #7c3aed; }
+
+/* ============================================================
+   Tables
+   ============================================================ */
+.table-custom {
+  margin-bottom: 0;
+  vertical-align: middle;
+}
+
+.table-custom thead th {
+  background-color: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e2e8f0;
+  padding: 0.85rem 1rem;
+  white-space: nowrap;
+}
+
+.table-custom tbody tr {
+  transition: background-color 0.15s ease-in-out;
+}
+
+.table-custom tbody tr:hover {
+  background-color: #f8faff !important;
+}
+
+.table-custom td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.925rem;
+}
+
+/* ============================================================
+   Badges & Status Tags
+   ============================================================ */
+.badge-status {
+  padding: 0.35rem 0.75rem;
+  border-radius: 30px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.badge-status.status-active {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-status.status-extended {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge-status.status-returned {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.badge-status.status-cancelled {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-status.status-paid {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.badge-status.status-partial {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge-status.status-pending {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+/* ============================================================
+   Toast Notification Styling
+   ============================================================ */
+.toast-container {
+  z-index: 1090;
+}
+
+.custom-toast {
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border: none;
+  overflow: hidden;
+}
+
+/* ============================================================
+   Login Page Styling
+   ============================================================ */
+.login-bg {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 440px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.login-header {
+  background-color: var(--sidebar-bg);
+  padding: 2.25rem 2rem 1.75rem;
+  text-align: center;
+  color: #ffffff;
+}
+
+.login-header .brand-logo-icon {
+  width: 60px;
+  height: 60px;
+  background-color: var(--sidebar-accent);
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 6px 16px rgba(233, 69, 96, 0.4);
+}
+
+.login-body {
+  padding: 2.25rem 2rem;
+}
+
+/* ============================================================
+   Shopping Cart / Item Selector on Orders Page
+   ============================================================ */
+.item-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.9rem;
+  background: #ffffff;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.item-card:hover {
+  border-color: #0f3460;
+  box-shadow: 0 4px 12px rgba(15, 52, 96, 0.08);
+}
+
+.item-card.selected {
+  border-color: #0f3460;
+  background-color: #f0f7ff;
+}
+
+.quantity-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.quantity-stepper input {
+  width: 54px;
+  text-align: center;
+  font-weight: 600;
+  padding: 0.25rem;
+}
+
+/* ============================================================
+   Autocomplete Suggestions Dropdown
+   ============================================================ */
+.autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 1060;
+  display: none;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+.autocomplete-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.autocomplete-dropdown::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.autocomplete-dropdown::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 4px;
+}
+
+.autocomplete-item {
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.autocomplete-item:hover, .autocomplete-item.active {
+  background-color: #edf2f7;
+}
+
+/* ============================================================
+   Print Stylesheet for Final Bill / Invoice
+   ============================================================ */
+.bill-container {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 2rem;
+  color: #1a1a2e;
+}
+
+.bill-header {
+  border-bottom: 2px solid #0f3460;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.bill-company-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0f3460;
+  letter-spacing: -0.5px;
+}
+
+.bill-meta-box {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.bill-summary-table td {
+  padding: 0.5rem 0.75rem;
+}
+
+.bill-status-stamp {
+  display: inline-block;
+  padding: 0.4rem 1.25rem;
+  border: 3px solid currentColor;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  transform: rotate(-5deg);
+  opacity: 0.85;
+}
+
+.bill-status-stamp.stamp-paid {
+  color: #059669;
+}
+
+.bill-status-stamp.stamp-pending {
+  color: #dc2626;
+}
+
+.bill-status-stamp.stamp-partial {
+  color: #d97706;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #1a1a2e !important;
+    font-size: 11pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide navigation, sidebars, background page, backdrop, and buttons */
+  .sidebar,
+  .top-navbar,
+  .page-container,
+  .sidebar-backdrop,
+  .modal-backdrop,
+  .toast-container,
+  .no-print,
+  .btn,
+  .modal-header .btn-close,
+  .modal-footer {
+    display: none !important;
+  }
+
+  .app-wrapper,
+  .main-wrapper {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide all modals that are not actively open */
+  .modal:not(.show) {
+    display: none !important;
+  }
+
+  /* Make the active open modal fill the print page in normal document flow */
+  .modal.show {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
+  .modal.show .modal-dialog {
+    position: static !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .modal.show .modal-content {
+    position: static !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .modal.show .modal-header {
+    display: none !important;
+  }
+
+  .modal.show .modal-body {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+
+  .bill-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  .table-bordered th,
+  .table-bordered td {
+    border: 1px solid #cbd5e1 !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* ============================================================
+   Responsive Sidebar Handling
+   ============================================================ */
+@media (max-width: 991.98px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: -260px;
+  }
+
+  .sidebar.show {
+    left: 0;
+  }
+
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1030;
+  }
+
+  .sidebar-backdrop.show {
+    display: block;
+  }
+}

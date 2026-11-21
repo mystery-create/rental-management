@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customers - Rental Manager</title>
+  <!-- Bootstrap 5 CDN -->
+  <link href="libs/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons CDN -->
+  <link rel="stylesheet" href="libs/bootstrap-icons/bootstrap-icons.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="app-wrapper">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <a href="dashboard.html" class="sidebar-brand">
+        <i class="bi bi-box-seam-fill"></i>
+        <span>Rental Manager</span>
+      </a>
+
+      <ul class="sidebar-menu">
+        <li class="nav-item">
+          <a href="dashboard.html" class="nav-link">
+            <i class="bi bi-grid-1x2-fill"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="orders.html" class="nav-link">
+            <i class="bi bi-cart-plus-fill"></i>
+            <span>Orders / Bookings</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="returns.html" class="nav-link">
+            <i class="bi bi-receipt-cutoff"></i>
+            <span>Returns & Billing</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="inventory.html" class="nav-link">
+            <i class="bi bi-boxes"></i>
+            <span>Inventory</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="customers.html" class="nav-link active">
+            <i class="bi bi-people-fill"></i>
+            <span>Customers</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="d-flex align-items-center justify-content-between text-white-50">
+          <div class="small">
+            <div class="fw-semibold text-light" id="nav-user-name">Staff User</div>
+            <span class="badge bg-secondary-subtle text-light px-2" id="nav-user-role">STAFF</span>
+          </div>
+          <button class="btn btn-sm btn-outline-danger" onclick="logout()" title="Logout">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      <!-- Top Navbar -->
+      <header class="top-navbar">
+        <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-light d-lg-none p-1 px-2 border" id="sidebar-toggle-btn">
+            <i class="bi bi-list fs-5"></i>
+          </button>
+          <div>
+            <h5 class="mb-0 fw-bold text-dark">Customer Directory</h5>
+            <small class="text-muted">Manage customer contacts, addresses, and rental histories</small>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-primary d-flex align-items-center gap-2" onclick="openAddCustomerModal()" style="background-color: #0f3460; border-color: #0f3460;">
+            <i class="bi bi-person-plus-fill"></i> Add Customer
+          </button>
+        </div>
+      </header>
+
+      <!-- Page Container -->
+      <main class="page-container">
+        
+        <!-- Search and Filter Controls -->
+        <div class="custom-card p-3 mb-4">
+          <div class="row g-2 align-items-center">
+            <div class="col-12 col-md-8 col-lg-6">
+              <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted">
+                  <i class="bi bi-search"></i>
+                </span>
+                <input type="text" id="customerSearchInput" class="form-control border-start-0 ps-0" placeholder="Search by customer name or phone number..." autocomplete="off">
+                <button class="btn btn-outline-secondary" type="button" id="clearSearchBtn" title="Clear Search">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-12 col-md-4 col-lg-6 text-md-end text-muted small">
+              Total Customers: <span class="fw-bold text-dark" id="customerCountBadge">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Customer List Table Card -->
+        <div class="custom-card">
+          <div class="card-strip strip-primary"></div>
+          <div class="table-responsive">
+            <table class="table table-custom">
+              <thead>
+                <tr>
+                  <th style="width: 80px;">ID</th>
+                  <th>Customer Name</th>
+                  <th>Phone Number</th>
+                  <th>Address</th>
+                  <th class="text-center">Orders</th>
+                  <th>Joined Date</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="customers-tbody">
+                <tr>
+                  <td colspan="7" class="text-center py-4 text-muted">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    <div class="small mt-2">Loading customers...</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Add / Edit Customer Modal -->
+  <div class="modal fade" id="customerModal" tabindex="-1" aria-labelledby="customerModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold" id="customerModalTitle">Add Customer</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="customerForm">
+          <input type="hidden" id="customerIdField">
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <label for="customerNameField" class="form-label small fw-semibold">Customer Full Name <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                <input type="text" class="form-control" id="customerNameField" placeholder="e.g. Ramesh Kumar" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="customerPhoneField" class="form-label small fw-semibold">Phone Number <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                <input type="tel" class="form-control" id="customerPhoneField" placeholder="e.g. 9876543210" required>
+              </div>
+              <div class="form-text small">Must be unique for each customer.</div>
+            </div>
+            <div class="mb-3">
+              <label for="customerAddressField" class="form-label small fw-semibold">Address / Delivery Location</label>
+              <textarea class="form-control" id="customerAddressField" rows="3" placeholder="e.g. House #12, MG Road, Ward 5"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveCustomerBtn" style="background-color: #0f3460; border-color: #0f3460;">
+              Save Customer
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer Orders History Modal -->
+  <div class="modal fade" id="customerOrdersModal" tabindex="-1" aria-labelledby="customerOrdersModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-light">
+          <div>
+            <h5 class="modal-title fw-bold" id="customerOrdersModalTitle">Rental Order History</h5>
+            <small class="text-muted" id="customerOrdersModalSubtitle">Customer details</small>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-3">
+          <div class="table-responsive">
+            <table class="table table-custom">
+              <thead>
+                <tr>
+                  <th>Order #</th>
+                  <th>Dates (Start &rarr; Return)</th>
+                  <th>Advance</th>
+                  <th>Final Bill</th>
+                  <th>Order Status</th>
+                  <th>Payment</th>
+                  <th class="text-end">Action</th>
+                </tr>
+              </thead>
+              <tbody id="customer-orders-tbody">
+                <tr>
+                  <td colspan="7" class="text-center py-4 text-muted">Loading orders...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container position-fixed top-0 end-0 p-3"></div>
+
+  <!-- Bootstrap 5 Bundle JS CDN -->
+  <script src="libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <!-- Custom JS Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    let customersList = [];
+    let customerModalInstance = null;
+    let customerOrdersModalInstance = null;
+    let searchDebounceTimeout = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      customerModalInstance = new bootstrap.Modal(document.getElementById('customerModal'));
+      customerOrdersModalInstance = new bootstrap.Modal(document.getElementById('customerOrdersModal'));
+
+      loadCustomers();
+
+      // Real-time search with debounce
+      const searchInput = document.getElementById('customerSearchInput');
+      searchInput.addEventListener('input', (e) => {
+        clearTimeout(searchDebounceTimeout);
+        searchDebounceTimeout = setTimeout(() => {
+          loadCustomers(e.target.value.trim());
+        }, 300);
+      });
+
+      // Clear search button
+      document.getElementById('clearSearchBtn').addEventListener('click', () => {
+        searchInput.value = '';
+        loadCustomers();
+      });
+
+      // Form submit handler
+      document.getElementById('customerForm').addEventListener('submit', handleCustomerFormSubmit);
+    });
+
+    async function loadCustomers(search = '') {
+      const tbody = document.getElementById('customers-tbody');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center py-4 text-muted">
+            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+            <div class="small mt-2">Loading customers...</div>
+          </td>
+        </tr>
+      `;
+
+      try {
+        const endpoint = search ? `/customers?search=${encodeURIComponent(search)}` : '/customers';
+        const res = await apiGet(endpoint);
+        
+        if (res.success) {
+          customersList = res.customers || [];
+          document.getElementById('customerCountBadge').textContent = customersList.length;
+          renderCustomersTable(customersList);
+        }
+      } catch (err) {
+        console.error('Failed to load customers:', err);
+        showToast(err.message || 'Failed to fetch customer list', 'danger');
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center py-4 text-danger">
+              <i class="bi bi-exclamation-triangle fs-4 d-block mb-1"></i>
+              Error loading customers: ${err.message}
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    function renderCustomersTable(customers) {
+      const tbody = document.getElementById('customers-tbody');
+
+      if (!customers || customers.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center py-5 text-muted">
+              <i class="bi bi-people fs-2 d-block mb-2 text-secondary"></i>
+              No customers found. Click "Add Customer" above to register a new customer.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = customers.map(c => `
+        <tr style="cursor: pointer;" onclick="handleRowClick(event, ${c.customer_id})">
+          <td><span class="badge bg-light text-secondary border">#${c.customer_id}</span></td>
+          <td>
+            <div class="fw-bold text-dark">${escapeHtml(c.name)}</div>
+          </td>
+          <td>
+            <a href="tel:${c.phone}" class="text-decoration-none text-dark" onclick="event.stopPropagation()">
+              <i class="bi bi-telephone-fill text-muted me-1"></i>${escapeHtml(c.phone)}
+            </a>
+          </td>
+          <td>
+            <span class="text-muted small">${escapeHtml(c.address || 'No address specified')}</span>
+          </td>
+          <td class="text-center">
+            <span class="badge ${c.order_count > 0 ? 'bg-primary' : 'bg-light text-muted border'} rounded-pill px-2">
+              ${c.order_count} ${c.order_count === 1 ? 'order' : 'orders'}
+            </span>
+          </td>
+          <td>
+            <small class="text-muted">${formatDate(c.created_at)}</small>
+          </td>
+          <td class="text-end" onclick="event.stopPropagation()">
+            <button class="btn btn-sm btn-outline-primary py-1 px-2" onclick="viewCustomerOrders(${c.customer_id})" title="View Orders">
+              <i class="bi bi-receipt"></i> Orders
+            </button>
+            <button class="btn btn-sm btn-outline-secondary py-1 px-2 ms-1" onclick="openEditCustomerModal(${c.customer_id})" title="Edit Details">
+              <i class="bi bi-pencil"></i> Edit
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function handleRowClick(event, customerId) {
+      // If user clicked row, show their orders modal
+      viewCustomerOrders(customerId);
+    }
+
+    function openAddCustomerModal() {
+      document.getElementById('customerModalTitle').textContent = 'Add New Customer';
+      document.getElementById('customerIdField').value = '';
+      document.getElementById('customerNameField').value = '';
+      document.getElementById('customerPhoneField').value = '';
+      document.getElementById('customerAddressField').value = '';
+      customerModalInstance.show();
+    }
+
+    function openEditCustomerModal(customerId) {
+      const customer = customersList.find(c => c.customer_id === customerId);
+      if (!customer) return;
+
+      document.getElementById('customerModalTitle').textContent = 'Edit Customer Details';
+      document.getElementById('customerIdField').value = customer.customer_id;
+      document.getElementById('customerNameField').value = customer.name;
+      document.getElementById('customerPhoneField').value = customer.phone;
+      document.getElementById('customerAddressField').value = customer.address || '';
+      customerModalInstance.show();
+    }
+
+    async function handleCustomerFormSubmit(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById('saveCustomerBtn');
+      const originalText = saveBtn.textContent;
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      const customerId = document.getElementById('customerIdField').value;
+      const name = document.getElementById('customerNameField').value.trim();
+      const phone = document.getElementById('customerPhoneField').value.trim();
+      const address = document.getElementById('customerAddressField').value.trim();
+
+      try {
+        if (customerId) {
+          // Edit existing customer
+          const res = await apiPut(`/customers/${customerId}`, { name, phone, address });
+          if (res.success) {
+            showToast('Customer updated successfully!', 'success');
+            customerModalInstance.hide();
+            loadCustomers();
+          }
+        } else {
+          // Add new customer
+          const res = await apiPost('/customers', { name, phone, address });
+          if (res.success) {
+            showToast('Customer registered successfully!', 'success');
+            customerModalInstance.hide();
+            loadCustomers();
+          }
+        }
+      } catch (err) {
+        console.error('Customer save error:', err);
+        showToast(err.message || 'Failed to save customer', 'danger');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalText;
+      }
+    }
+
+    async function viewCustomerOrders(customerId) {
+      const customer = customersList.find(c => c.customer_id === customerId);
+      document.getElementById('customerOrdersModalTitle').textContent = `Orders for ${customer ? customer.name : 'Customer #' + customerId}`;
+      document.getElementById('customerOrdersModalSubtitle').textContent = customer ? `Phone: ${customer.phone}` : '';
+
+      const tbody = document.getElementById('customer-orders-tbody');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center py-4 text-muted">
+            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+            <div class="small mt-2">Loading order history...</div>
+          </td>
+        </tr>
+      `;
+
+      customerOrdersModalInstance.show();
+
+      try {
+        const res = await apiGet(`/customers/${customerId}/orders`);
+        if (res.success) {
+          const orders = res.orders || [];
+          if (orders.length === 0) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="7" class="text-center py-4 text-muted">
+                  <i class="bi bi-cart-x fs-3 d-block mb-1"></i>
+                  No rental orders found for this customer yet.
+                </td>
+              </tr>
+            `;
+            return;
+          }
+
+          tbody.innerHTML = orders.map(o => `
+            <tr>
+              <td><span class="fw-bold text-primary">#ORD-${o.order_id}</span></td>
+              <td>
+                <div><span class="text-muted small">From:</span> ${formatDate(o.start_date)}</div>
+                <div><span class="text-muted small">Return:</span> ${formatDate(o.actual_return_date || o.expected_return_date)}</div>
+              </td>
+              <td>${formatCurrency(o.advance_amount)}</td>
+              <td>
+                ${o.total_amount ? `<span class="fw-bold text-dark">${formatCurrency(o.total_amount)}</span>` : '<span class="text-muted">Not billed</span>'}
+              </td>
+              <td>${getStatusBadge(o.status)}</td>
+              <td>${getStatusBadge(o.payment_status || (o.status === 'returned' ? 'pending' : '-'))}</td>
+              <td class="text-end">
+                ${o.status === 'active' || o.status === 'extended' ? `
+                  <a href="returns.html?order_id=${o.order_id}" class="btn btn-sm btn-outline-success py-1 px-2">
+                    <i class="bi bi-receipt"></i> Return
+                  </a>
+                ` : `
+                  <a href="returns.html?order_id=${o.order_id}" class="btn btn-sm btn-light py-1 px-2 border">
+                    <i class="bi bi-file-text"></i> View Bill
+                  </a>
+                `}
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('Failed to load customer orders:', err);
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center py-4 text-danger">
+              Failed to load order history: ${err.message}
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>

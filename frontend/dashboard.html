@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Rental Manager</title>
+  <!-- Bootstrap 5 CDN -->
+  <link href="libs/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons CDN -->
+  <link rel="stylesheet" href="libs/bootstrap-icons/bootstrap-icons.min.css">
+  <!-- Chart.js CDN -->
+  <script src="libs/chartjs/chart.min.js"></script>
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="app-wrapper">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <a href="dashboard.html" class="sidebar-brand">
+        <i class="bi bi-box-seam-fill"></i>
+        <span>Rental Manager</span>
+      </a>
+
+      <ul class="sidebar-menu">
+        <li class="nav-item">
+          <a href="dashboard.html" class="nav-link active">
+            <i class="bi bi-grid-1x2-fill"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="orders.html" class="nav-link">
+            <i class="bi bi-cart-plus-fill"></i>
+            <span>Orders / Bookings</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="returns.html" class="nav-link">
+            <i class="bi bi-receipt-cutoff"></i>
+            <span>Returns & Billing</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="inventory.html" class="nav-link">
+            <i class="bi bi-boxes"></i>
+            <span>Inventory</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="customers.html" class="nav-link">
+            <i class="bi bi-people-fill"></i>
+            <span>Customers</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="d-flex align-items-center justify-content-between text-white-50">
+          <div class="small">
+            <div class="fw-semibold text-light" id="nav-user-name">Staff User</div>
+            <span class="badge bg-secondary-subtle text-light px-2" id="nav-user-role">STAFF</span>
+          </div>
+          <button class="btn btn-sm btn-outline-danger" onclick="logout()" title="Logout">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      <!-- Top Navbar -->
+      <header class="top-navbar">
+        <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-light d-lg-none p-1 px-2 border" id="sidebar-toggle-btn">
+            <i class="bi bi-list fs-5"></i>
+          </button>
+          <div>
+            <h5 class="mb-0 fw-bold text-dark">Executive Dashboard</h5>
+            <small class="text-muted">Warehouse operations and rental revenue overview</small>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-sm btn-outline-primary" id="refreshBtn" onclick="loadDashboardData()">
+            <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+          </button>
+          <div class="vr mx-1"></div>
+          <a href="orders.html" class="btn btn-sm btn-primary d-none d-sm-inline-flex align-items-center gap-1" style="background-color: #0f3460; border-color: #0f3460;">
+            <i class="bi bi-plus-circle"></i> New Booking
+          </a>
+        </div>
+      </header>
+
+      <!-- Page Container -->
+      <main class="page-container">
+        
+        <!-- 4 Stat Cards Row -->
+        <div class="row g-3 mb-4">
+          <!-- Active Orders Card -->
+          <div class="col-12 col-sm-6 col-xl-3">
+            <div class="custom-card hover-lift">
+              <div class="card-strip strip-primary"></div>
+              <div class="stat-card-body">
+                <div>
+                  <span class="text-muted small fw-semibold text-uppercase">Active Orders</span>
+                  <h3 class="fw-bold mb-0 mt-1" id="stat-active-orders">0</h3>
+                  <small class="text-primary"><i class="bi bi-arrow-up-right"></i> In circulation</small>
+                </div>
+                <div class="stat-icon icon-blue">
+                  <i class="bi bi-cart-check-fill"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Today's Returns Card -->
+          <div class="col-12 col-sm-6 col-xl-3">
+            <div class="custom-card hover-lift">
+              <div class="card-strip strip-warning"></div>
+              <div class="stat-card-body">
+                <div>
+                  <span class="text-muted small fw-semibold text-uppercase">Today's Returns</span>
+                  <h3 class="fw-bold mb-0 mt-1" id="stat-today-returns">0</h3>
+                  <small class="text-warning"><i class="bi bi-calendar-event"></i> Due or received</small>
+                </div>
+                <div class="stat-icon icon-amber">
+                  <i class="bi bi-arrow-return-left"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Monthly Revenue Card -->
+          <div class="col-12 col-sm-6 col-xl-3">
+            <div class="custom-card hover-lift">
+              <div class="card-strip strip-success"></div>
+              <div class="stat-card-body">
+                <div>
+                  <span class="text-muted small fw-semibold text-uppercase">Monthly Revenue</span>
+                  <h3 class="fw-bold mb-0 mt-1" id="stat-monthly-revenue">₹0.00</h3>
+                  <small class="text-success"><i class="bi bi-cash-stack"></i> This month's total</small>
+                </div>
+                <div class="stat-icon icon-green">
+                  <i class="bi bi-currency-rupee"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Low Stock Items Card -->
+          <div class="col-12 col-sm-6 col-xl-3">
+            <div class="custom-card hover-lift">
+              <div class="card-strip strip-danger"></div>
+              <div class="stat-card-body">
+                <div>
+                  <span class="text-muted small fw-semibold text-uppercase">Low Stock Alert</span>
+                  <h3 class="fw-bold mb-0 mt-1" id="stat-low-stock">0</h3>
+                  <small class="text-danger"><i class="bi bi-exclamation-triangle"></i> &lt; 10% remaining</small>
+                </div>
+                <div class="stat-icon icon-red">
+                  <i class="bi bi-shield-slash-fill"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart and Low Stock Row -->
+        <div class="row g-4 mb-4">
+          <!-- 7-Day Revenue Line Chart -->
+          <div class="col-12 col-lg-8">
+            <div class="custom-card h-100">
+              <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="fw-bold text-dark">
+                  <i class="bi bi-graph-up-arrow text-primary me-2"></i>Last 7 Days Revenue Trend
+                </div>
+                <span class="badge bg-light text-secondary border">Real-time Payments</span>
+              </div>
+              <div class="p-3" style="position: relative; height: 320px;">
+                <canvas id="revenueChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Low Stock Warning Panel -->
+          <div class="col-12 col-lg-4">
+            <div class="custom-card h-100">
+              <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <div class="fw-bold text-danger">
+                  <i class="bi bi-exclamation-octagon-fill me-2"></i>Critical Inventory
+                </div>
+                <a href="inventory.html" class="small text-decoration-none">Manage Items &rarr;</a>
+              </div>
+              <div class="p-3" style="max-height: 320px; overflow-y: auto;">
+                <div id="low-stock-container">
+                  <div class="text-center text-muted py-4">
+                    <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                    <div class="small mt-2">Checking inventory thresholds...</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Active Orders Section -->
+        <div class="custom-card">
+          <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <h6 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-clock-history text-primary me-2"></i>Recent Active Orders
+              </h6>
+              <small class="text-muted">Ongoing rental bookings currently out in the field</small>
+            </div>
+            <a href="orders.html" class="btn btn-sm btn-outline-secondary">
+              View All Orders <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-custom">
+              <thead>
+                <tr>
+                  <th>Order #</th>
+                  <th>Customer</th>
+                  <th>Start Date</th>
+                  <th>Expected Return</th>
+                  <th>Advance Paid</th>
+                  <th>Status</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="recent-orders-tbody">
+                <tr>
+                  <td colspan="7" class="text-center py-4 text-muted">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    <div class="small mt-2">Loading active orders...</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Order Bill & Details Modal (Dashboard) -->
+  <div class="modal fade" id="dashboardOrderBillModal" tabindex="-1" aria-labelledby="dashboardOrderBillModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-light no-print">
+          <div>
+            <h5 class="modal-title fw-bold text-dark mb-0" id="dashboardOrderBillModalTitle">
+              <i class="bi bi-receipt text-primary me-2"></i>Order Information & Bill
+            </h5>
+            <small class="text-muted" id="dashboardOrderBillModalSubtitle">Complete customer ledger & invoice details</small>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4 printable-area" id="printableDashboardBill">
+          <!-- Injected dynamically -->
+        </div>
+        <div class="modal-footer bg-light no-print d-flex justify-content-between">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary" onclick="printInvoiceElement('printableDashboardBill')" style="background-color: #0f3460; border-color: #0f3460;">
+              <i class="bi bi-printer-fill me-1"></i> Print Bill
+            </button>
+            <a href="#" class="btn btn-success" id="dashModalReturnBtn">
+              <i class="bi bi-receipt-cutoff me-1"></i> Process Return / Settle
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container position-fixed top-0 end-0 p-3"></div>
+
+  <!-- Bootstrap 5 Bundle JS CDN -->
+  <script src="libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <!-- Custom JS Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    let revenueChartInstance = null;
+
+    async function loadDashboardData() {
+      const refreshBtn = document.getElementById('refreshBtn');
+      if (refreshBtn) refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Loading...';
+
+      try {
+        // Fetch Dashboard Summary Stats from GET /api/bills/dashboard
+        const res = await apiGet('/bills/dashboard');
+        if (res.success && res.stats) {
+          const stats = res.stats;
+
+          // Update Stat Cards
+          document.getElementById('stat-active-orders').textContent = stats.active_orders || 0;
+          document.getElementById('stat-today-returns').textContent = stats.today_returns || 0;
+          document.getElementById('stat-monthly-revenue').textContent = formatCurrency(stats.total_revenue_month || 0);
+          document.getElementById('stat-low-stock').textContent = (stats.low_stock_items || []).length;
+
+          // Render Low Stock Widget
+          renderLowStock(stats.low_stock_items || []);
+
+          // Render Revenue Chart
+          renderRevenueChart(stats.revenue_chart_7_days || []);
+        }
+
+        // Fetch Recent Active Orders from GET /api/orders?status=active
+        const ordersRes = await apiGet('/orders?status=active');
+        if (ordersRes.success) {
+          renderRecentOrders(ordersRes.orders || []);
+        }
+
+      } catch (err) {
+        console.error('Failed to load dashboard:', err);
+        showToast(err.message || 'Could not load dashboard data', 'danger');
+      } finally {
+        if (refreshBtn) refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Refresh';
+      }
+    }
+
+    function renderRevenueChart(chartData) {
+      const ctx = document.getElementById('revenueChart').getContext('2d');
+      
+      const labels = chartData.map(item => formatDate(item.date));
+      const values = chartData.map(item => Number(item.revenue) || 0);
+
+      if (revenueChartInstance) {
+        revenueChartInstance.destroy();
+      }
+
+      revenueChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Daily Revenue (₹)',
+            data: values,
+            borderColor: '#0f3460',
+            backgroundColor: 'rgba(15, 52, 96, 0.1)',
+            fill: true,
+            tension: 0.35,
+            pointBackgroundColor: '#e94560',
+            pointBorderColor: '#ffffff',
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            borderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ' Revenue: ' + formatCurrency(context.parsed.y);
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return '₹' + value;
+                }
+              },
+              grid: {
+                color: '#f1f5f9'
+              }
+            },
+            x: {
+              grid: {
+                display: false
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderLowStock(items) {
+      const container = document.getElementById('low-stock-container');
+      if (!items || items.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-4 text-success">
+            <i class="bi bi-check-circle-fill fs-2"></i>
+            <p class="mb-0 mt-2 fw-semibold">All items well stocked</p>
+            <small class="text-muted">No items below 10% inventory threshold.</small>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '<div class="list-group list-group-flush">';
+      items.forEach(item => {
+        const pct = item.total_quantity > 0 ? Math.round((item.available_quantity / item.total_quantity) * 100) : 0;
+        html += `
+          <div class="list-group-item px-0 py-2 border-bottom">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <div>
+                <span class="fw-semibold text-dark">${item.item_name}</span>
+                <span class="badge bg-light text-secondary border ms-1">${item.section_name || 'Item'}</span>
+              </div>
+              <span class="badge bg-danger-subtle text-danger fw-bold">${item.available_quantity} / ${item.total_quantity} left</span>
+            </div>
+            <div class="progress" style="height: 6px;">
+              <div class="progress-bar bg-danger" role="progressbar" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    function renderRecentOrders(orders) {
+      const tbody = document.getElementById('recent-orders-tbody');
+      if (!orders || orders.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center py-4 text-muted">
+              <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+              No active orders found. Click "New Booking" to create one.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      // Display top 8 recent active orders
+      const recent = orders.slice(0, 8);
+      tbody.innerHTML = recent.map(o => `
+        <tr>
+          <td><span class="fw-bold text-primary">#ORD-${o.order_id}</span></td>
+          <td>
+            <div class="fw-semibold text-dark">${o.customer_name || 'Customer #' + o.customer_id}</div>
+            <small class="text-muted"><i class="bi bi-telephone me-1"></i>${o.customer_phone || '-'}</small>
+          </td>
+          <td>${formatDate(o.start_date)}</td>
+          <td>
+            <span class="${isOverdue(o.expected_return_date) ? 'text-danger fw-bold' : ''}">
+              ${formatDate(o.expected_return_date)}
+              ${isOverdue(o.expected_return_date) ? ' <i class="bi bi-exclamation-circle-fill text-danger" title="Overdue"></i>' : ''}
+            </span>
+          </td>
+          <td>${formatCurrency(o.advance_amount)}</td>
+          <td>${getStatusBadge(o.status)}</td>
+          <td class="text-end">
+            <a href="returns.html?order_id=${o.order_id}" class="btn btn-sm btn-outline-success py-1 px-2" title="Return & Bill">
+              <i class="bi bi-receipt"></i> Return
+            </a>
+            <button type="button" class="btn btn-sm btn-light py-1 px-2 border ms-1" onclick="viewOrderBillModal(${o.order_id})" title="View Complete Bill & Info">
+              <i class="bi bi-eye"></i> View
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function isOverdue(expectedDateStr) {
+      if (!expectedDateStr) return false;
+      const today = new Date().toISOString().split('T')[0];
+      const expected = String(expectedDateStr).substring(0, 10);
+      return expected < today;
+    }
+
+    let dashboardModalInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      dashboardModalInstance = new bootstrap.Modal(document.getElementById('dashboardOrderBillModal'));
+      loadDashboardData();
+    });
+
+    async function viewOrderBillModal(orderId) {
+      const container = document.getElementById('printableDashboardBill');
+      container.innerHTML = `
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm text-primary mb-2"></div>
+          <div>Loading complete customer and billing information...</div>
+        </div>
+      `;
+      document.getElementById('dashModalReturnBtn').href = `returns.html?order_id=${orderId}`;
+      dashboardModalInstance.show();
+
+      try {
+        let bill = null;
+        try {
+          const bRes = await apiGet(`/bills/order/${orderId}`);
+          if (bRes.success && bRes.bill) {
+            bill = bRes.bill;
+          }
+        } catch (e) {
+          // Order has not been billed yet
+        }
+
+        const oRes = await apiGet(`/orders/${orderId}`);
+        if (!oRes.success || !oRes.order) {
+          container.innerHTML = '<div class="alert alert-danger">Order details could not be found.</div>';
+          return;
+        }
+
+        const order = oRes.order;
+
+        if (bill) {
+          renderBilledOrder(bill);
+        } else {
+          renderActiveOrderBill(order);
+        }
+      } catch (err) {
+        console.error('Error fetching order bill:', err);
+        container.innerHTML = `<div class="alert alert-danger py-3">Failed to load order: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    function renderBilledOrder(bill) {
+      const container = document.getElementById('printableDashboardBill');
+      const items = bill.items || [];
+      const payments = bill.payments || [];
+
+      let stampClass = 'stamp-pending';
+      let stampText = 'PENDING PAYMENT';
+      if (bill.payment_status === 'paid' || Number(bill.remaining_amount) <= 0) {
+        stampClass = 'stamp-paid';
+        stampText = 'PAID IN FULL';
+      } else if (bill.payment_status === 'partial') {
+        stampClass = 'stamp-partial';
+        stampText = 'PARTIAL PAYMENT';
+      }
+
+      const settlementPaid = payments
+        .filter(p => p.payment_type !== 'advance')
+        .reduce((sum, p) => sum + Number(p.amount), 0);
+
+      container.innerHTML = `
+        <div class="bill-container">
+          
+          <!-- Company & Invoice Header -->
+          <div class="bill-header d-flex justify-content-between align-items-start">
+            <div>
+              <div class="bill-company-name">RENTAL MANAGER</div>
+              <div class="text-muted small">Warehouse, Event & Utensils Rental Services</div>
+              <div class="text-muted small">Phone: +91 98765 43210 &bull; Email: rentals@warehouse.internal</div>
+            </div>
+            <div class="text-end">
+              <h4 class="fw-bold text-dark mb-1">RENTAL INVOICE</h4>
+              <div class="fw-semibold text-primary">Invoice #INV-BILL-${bill.bill_id} (Order #ORD-${bill.order_id})</div>
+              <div class="small text-muted">Billed: ${formatDateTime(bill.generated_at)}</div>
+              <div class="mt-2">
+                <span class="bill-status-stamp ${stampClass}">${stampText}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer & Booking Reference -->
+          <div class="row g-3 mb-4">
+            <div class="col-6">
+              <div class="bill-meta-box h-100">
+                <span class="text-muted small fw-bold text-uppercase d-block mb-1">Customer Information:</span>
+                <strong class="fs-6 text-dark d-block">${escapeHtml(bill.customer_name)}</strong>
+                <div class="small text-muted"><i class="bi bi-telephone me-1"></i>${escapeHtml(bill.customer_phone)}</div>
+                <div class="small text-muted"><i class="bi bi-geo-alt me-1"></i>${escapeHtml(bill.customer_address || 'No address specified')}</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="bill-meta-box h-100">
+                <span class="text-muted small fw-bold text-uppercase d-block mb-1">Rental Timeline:</span>
+                <div><strong>Rental Start:</strong> ${formatDate(bill.start_date)}</div>
+                <div><strong>Actual Return:</strong> ${formatDate(bill.actual_return_date || bill.expected_return_date)}</div>
+                <div><strong>Total Days:</strong> ${bill.total_days} ${bill.total_days === 1 ? 'day' : 'days'}</div>
+                <div class="text-muted small">Processed by: ${escapeHtml(bill.generated_by_name || 'Staff')}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Items Table -->
+          <h6 class="fw-bold text-dark small text-uppercase mb-2">Itemized Products</h6>
+          <div class="table-responsive mb-4">
+            <table class="table table-bordered table-sm mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 40px;" class="text-center">#</th>
+                  <th>Rental Item Description</th>
+                  <th class="text-center" style="width: 80px;">Booked</th>
+                  <th class="text-center" style="width: 85px;">Returned</th>
+                  <th class="text-end" style="width: 100px;">Daily Rate</th>
+                  <th class="text-center" style="width: 70px;">Days</th>
+                  <th class="text-end" style="width: 110px;">Amount (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${items.map((item, idx) => {
+                  const lineTotal = item.quantity * item.price_per_day_snapshot * bill.total_days;
+                  const retQty = (item.returned_quantity !== null && item.returned_quantity !== undefined) ? Number(item.returned_quantity) : Number(item.quantity);
+                  const diff = Number(item.quantity) - retQty;
+                  return `
+                    <tr>
+                      <td class="text-center text-muted">${idx + 1}</td>
+                      <td>
+                        <strong>${escapeHtml(item.item_name)}</strong>
+                        <span class="text-muted small ms-1">(${escapeHtml(item.section_name || 'Item')})</span>
+                        ${diff > 0 ? `<div class="small text-danger fw-semibold"><i class="bi bi-exclamation-triangle-fill me-1"></i>${diff} missing / unreturned</div>` : ''}
+                      </td>
+                      <td class="text-center">${item.quantity}</td>
+                      <td class="text-center fw-bold ${diff > 0 ? 'text-warning' : 'text-success'}">${retQty}</td>
+                      <td class="text-end">${formatCurrency(item.price_per_day_snapshot)}</td>
+                      <td class="text-center">${bill.total_days}</td>
+                      <td class="text-end fw-semibold">${formatCurrency(lineTotal)}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Financial Calculation Table -->
+          <div class="row justify-content-end mb-3">
+            <div class="col-12 col-md-6">
+              <table class="table table-sm bill-summary-table mb-0">
+                <tr>
+                  <td class="text-muted">Items Subtotal:</td>
+                  <td class="text-end fw-semibold">${formatCurrency(bill.subtotal)}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Late Penalty:</td>
+                  <td class="text-end ${Number(bill.penalty_amount) > 0 ? 'text-danger fw-bold' : 'text-muted'}">
+                    ${bill.penalty_waived ? 'Waived (₹0.00)' : formatCurrency(bill.penalty_amount)}
+                  </td>
+                </tr>
+                <tr class="border-top">
+                  <td class="fw-bold text-dark fs-6">Gross Invoice Total:</td>
+                  <td class="text-end fw-bold text-dark fs-6">${formatCurrency(bill.total_amount)}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Advance Paid:</td>
+                  <td class="text-end text-success fw-bold">- ${formatCurrency(bill.advance_paid)}</td>
+                </tr>
+                ${settlementPaid > 0 ? `
+                  <tr>
+                    <td class="text-muted">Settlement Payments:</td>
+                    <td class="text-end text-success fw-bold">- ${formatCurrency(settlementPaid)}</td>
+                  </tr>
+                ` : ''}
+                <tr class="border-top table-light">
+                  <td class="fw-bold ${Number(bill.remaining_amount) <= 0 ? 'text-success' : 'text-primary'} fs-5">
+                    ${Number(bill.remaining_amount) <= 0 ? 'Net Balance Due (PAID IN FULL):' : 'Remaining Balance Due:'}
+                  </td>
+                  <td class="text-end fw-bold ${Number(bill.remaining_amount) <= 0 ? 'text-success' : 'text-primary'} fs-5">
+                    ${formatCurrency(bill.remaining_amount)}
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- Payment History -->
+          ${payments.length > 0 ? `
+            <div class="mb-3">
+              <span class="text-muted small fw-bold text-uppercase d-block mb-1">Recorded Payments:</span>
+              <ul class="list-group list-group-flush border rounded small">
+                ${payments.map(p => `
+                  <li class="list-group-item d-flex justify-content-between py-1">
+                    <span><i class="bi bi-check-circle-fill text-success me-1"></i>${p.payment_type.toUpperCase()} payment on ${formatDateTime(p.payment_date)}</span>
+                    <strong class="text-dark">${formatCurrency(p.amount)}</strong>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          ` : ''}
+
+        </div>
+      `;
+    }
+
+    function renderActiveOrderBill(order) {
+      const container = document.getElementById('printableDashboardBill');
+      const items = order.items || [];
+      const start = new Date(String(order.start_date).substring(0, 10) + 'T00:00:00Z');
+      const end = new Date(String(order.expected_return_date).substring(0, 10) + 'T00:00:00Z');
+      const diffMs = end.getTime() - start.getTime();
+      const days = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+
+      let subtotal = 0;
+      for (const item of items) {
+        subtotal += Number(item.quantity) * Number(item.price_per_day_snapshot) * days;
+      }
+      const advance = Number(order.advance_amount) || 0;
+      const remaining = Math.max(0, subtotal - advance);
+
+      container.innerHTML = `
+        <div class="bill-container">
+          
+          <!-- Company & Header -->
+          <div class="bill-header d-flex justify-content-between align-items-start">
+            <div>
+              <div class="bill-company-name">RENTAL MANAGER</div>
+              <div class="text-muted small">Warehouse, Event & Utensils Rental Services</div>
+              <div class="text-muted small">Phone: +91 98765 43210 &bull; Email: rentals@warehouse.internal</div>
+            </div>
+            <div class="text-end">
+              <h4 class="fw-bold text-dark mb-1">ACTIVE BOOKING SLIP</h4>
+              <div class="fw-semibold text-primary">Booking #ORD-${order.order_id}</div>
+              <div class="small text-muted">Created: ${formatDateTime(order.created_at)}</div>
+              <div class="mt-2">
+                <span class="bill-status-stamp stamp-pending">ACTIVE RENTAL</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer & Booking Reference -->
+          <div class="row g-3 mb-4">
+            <div class="col-6">
+              <div class="bill-meta-box h-100">
+                <span class="text-muted small fw-bold text-uppercase d-block mb-1">Customer Information:</span>
+                <strong class="fs-6 text-dark d-block">${escapeHtml(order.customer_name)}</strong>
+                <div class="small text-muted"><i class="bi bi-telephone me-1"></i>${escapeHtml(order.customer_phone)}</div>
+                <div class="small text-muted"><i class="bi bi-geo-alt me-1"></i>${escapeHtml(order.customer_address || 'No address specified')}</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="bill-meta-box h-100">
+                <span class="text-muted small fw-bold text-uppercase d-block mb-1">Rental Timeline:</span>
+                <div><strong>Start Date:</strong> ${formatDate(order.start_date)}</div>
+                <div><strong>Expected Return:</strong> ${formatDate(order.expected_return_date)}</div>
+                <div><strong>Planned Duration:</strong> ${days} ${days === 1 ? 'day' : 'days'}</div>
+                <div class="text-muted small">Booked by: ${escapeHtml(order.created_by_name || 'Staff')}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Products Table -->
+          <h6 class="fw-bold text-dark small text-uppercase mb-2">Booked Warehouse Products</h6>
+          <div class="table-responsive mb-4">
+            <table class="table table-bordered table-sm mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 40px;" class="text-center">#</th>
+                  <th>Product Description</th>
+                  <th class="text-center" style="width: 80px;">Qty</th>
+                  <th class="text-end" style="width: 110px;">Daily Rate</th>
+                  <th class="text-center" style="width: 80px;">Days</th>
+                  <th class="text-end" style="width: 120px;">Estimated Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${items.map((item, idx) => {
+                  const lineTotal = item.quantity * item.price_per_day_snapshot * days;
+                  return `
+                    <tr>
+                      <td class="text-center text-muted">${idx + 1}</td>
+                      <td>
+                        <strong>${escapeHtml(item.item_name)}</strong>
+                        <span class="text-muted small ms-1">(${escapeHtml(item.section_name || 'Item')})</span>
+                      </td>
+                      <td class="text-center fw-bold">${item.quantity}</td>
+                      <td class="text-end">₹${item.price_per_day_snapshot}</td>
+                      <td class="text-center">${days}</td>
+                      <td class="text-end fw-semibold">${formatCurrency(lineTotal)}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Financial Calculation Table -->
+          <div class="row justify-content-end mb-3">
+            <div class="col-12 col-md-6">
+              <table class="table table-sm bill-summary-table mb-0">
+                <tr>
+                  <td class="text-muted">Estimated Products Subtotal:</td>
+                  <td class="text-end fw-semibold">${formatCurrency(subtotal)}</td>
+                </tr>
+                <tr>
+                  <td class="text-muted">Advance Paid:</td>
+                  <td class="text-end text-success fw-bold">- ${formatCurrency(advance)}</td>
+                </tr>
+                <tr class="border-top table-light">
+                  <td class="fw-bold text-primary fs-5">Amount Due on Return:</td>
+                  <td class="text-end fw-bold text-primary fs-5">${formatCurrency(remaining)}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          ${order.notes ? `
+            <div class="p-2 border rounded bg-light small mb-3">
+              <strong>Notes / Venue:</strong> ${escapeHtml(order.notes)}
+            </div>
+          ` : ''}
+
+        </div>
+      `;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory - Rental Manager</title>
+  <!-- Bootstrap 5 CDN -->
+  <link href="libs/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons CDN -->
+  <link rel="stylesheet" href="libs/bootstrap-icons/bootstrap-icons.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="app-wrapper">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <a href="dashboard.html" class="sidebar-brand">
+        <i class="bi bi-box-seam-fill"></i>
+        <span>Rental Manager</span>
+      </a>
+
+      <ul class="sidebar-menu">
+        <li class="nav-item">
+          <a href="dashboard.html" class="nav-link">
+            <i class="bi bi-grid-1x2-fill"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="orders.html" class="nav-link">
+            <i class="bi bi-cart-plus-fill"></i>
+            <span>Orders / Bookings</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="returns.html" class="nav-link">
+            <i class="bi bi-receipt-cutoff"></i>
+            <span>Returns & Billing</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="inventory.html" class="nav-link active">
+            <i class="bi bi-boxes"></i>
+            <span>Inventory</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="customers.html" class="nav-link">
+            <i class="bi bi-people-fill"></i>
+            <span>Customers</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="d-flex align-items-center justify-content-between text-white-50">
+          <div class="small">
+            <div class="fw-semibold text-light" id="nav-user-name">Staff User</div>
+            <span class="badge bg-secondary-subtle text-light px-2" id="nav-user-role">STAFF</span>
+          </div>
+          <button class="btn btn-sm btn-outline-danger" onclick="logout()" title="Logout">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      <!-- Top Navbar -->
+      <header class="top-navbar">
+        <div class="d-flex align-items-center gap-3">
+          <button class="btn btn-light d-lg-none p-1 px-2 border" id="sidebar-toggle-btn">
+            <i class="bi bi-list fs-5"></i>
+          </button>
+          <div>
+            <h5 class="mb-0 fw-bold text-dark">Rental Inventory & Stock</h5>
+            <small class="text-muted">Manage items, rental pricing per day, and sections</small>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1" onclick="openAddSectionModal()">
+            <i class="bi bi-folder-plus"></i> Add Section
+          </button>
+          <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" onclick="openAddItemModal()" style="background-color: #0f3460; border-color: #0f3460;">
+            <i class="bi bi-plus-circle"></i> Add Item
+          </button>
+        </div>
+      </header>
+
+      <!-- Page Container -->
+      <main class="page-container">
+        
+        <!-- Inventory Section Header & Tabs -->
+        <div class="custom-card mb-4">
+          <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <span class="fw-semibold text-dark me-2">Warehouse Sections:</span>
+              <span class="text-muted small" id="totalSectionsCount">Loading...</span>
+            </div>
+            <div class="input-group input-group-sm" style="max-width: 280px;">
+              <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+              <input type="text" id="inventoryItemSearch" class="form-control border-start-0" placeholder="Filter items in section...">
+            </div>
+          </div>
+
+          <!-- Dynamic Tabs Nav -->
+          <ul class="nav nav-tabs px-3 pt-2" id="sectionTabsNav" role="tablist">
+            <!-- Tabs injected dynamically via JS -->
+            <li class="nav-item">
+              <span class="nav-link active text-muted py-2">Loading sections...</span>
+            </li>
+          </ul>
+
+          <!-- Tab Content Panes -->
+          <div class="tab-content p-3" id="sectionTabContent">
+            <div class="text-center py-5 text-muted">
+              <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+              <div class="small mt-2">Loading inventory sections...</div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Add Item Modal -->
+  <div class="modal fade" id="itemModal" tabindex="-1" aria-labelledby="itemModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold" id="itemModalTitle">Add New Inventory Item</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="itemForm">
+          <input type="hidden" id="itemModalId">
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <label for="itemSectionSelect" class="form-label small fw-semibold">Inventory Section <span class="text-danger">*</span></label>
+              <select class="form-select" id="itemSectionSelect" required>
+                <!-- Populated via JS -->
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="itemNameField" class="form-label small fw-semibold">Item Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="itemNameField" placeholder="e.g. Steel Dinner Plate, LED Focus Light" required>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label for="itemPriceField" class="form-label small fw-semibold">Rental Price / Day (₹) <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text">₹</span>
+                  <input type="number" step="0.5" min="0" class="form-control" id="itemPriceField" placeholder="0.00" required>
+                </div>
+              </div>
+              <div class="col-6">
+                <label for="itemTotalQtyField" class="form-label small fw-semibold">Total Stock Qty <span class="text-danger">*</span></label>
+                <input type="number" min="0" step="1" class="form-control" id="itemTotalQtyField" placeholder="10" required>
+              </div>
+            </div>
+            <div id="itemModalQtyHint" class="form-text small d-none text-info">
+              <i class="bi bi-info-circle"></i> When editing total quantity, available quantity will be adjusted automatically.
+            </div>
+          </div>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveItemBtn" style="background-color: #0f3460; border-color: #0f3460;">
+              Save Item
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Edit Price Modal -->
+  <div class="modal fade" id="priceModal" tabindex="-1" aria-labelledby="priceModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-light py-2">
+          <h6 class="modal-title fw-bold" id="priceModalTitle">Update Rental Price</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="priceForm">
+          <input type="hidden" id="priceItemId">
+          <div class="modal-body p-3">
+            <div class="mb-2">
+              <small class="text-muted d-block">Item:</small>
+              <strong id="priceItemName" class="text-dark">Item Name</strong>
+            </div>
+            <div class="mb-3">
+              <label for="quickPriceField" class="form-label small fw-semibold">New Daily Rate (₹)</label>
+              <div class="input-group">
+                <span class="input-group-text">₹</span>
+                <input type="number" step="0.5" min="0" class="form-control" id="quickPriceField" required>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer bg-light py-2">
+            <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-sm btn-success" id="savePriceBtn">Update Price</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Section Modal -->
+  <div class="modal fade" id="sectionModal" tabindex="-1" aria-labelledby="sectionModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-light">
+          <h5 class="modal-title fw-bold" id="sectionModalTitle">Create Inventory Section</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="sectionForm">
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <label for="sectionNameField" class="form-label small fw-semibold">Section Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="sectionNameField" placeholder="e.g. Sound Systems, Catering Tools" required>
+            </div>
+            <div class="mb-3">
+              <label for="sectionDescField" class="form-label small fw-semibold">Description</label>
+              <textarea class="form-control" id="sectionDescField" rows="3" placeholder="Brief notes about items in this section"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveSectionBtn" style="background-color: #0f3460; border-color: #0f3460;">
+              Create Section
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container position-fixed top-0 end-0 p-3"></div>
+
+  <!-- Bootstrap 5 Bundle JS CDN -->
+  <script src="libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <!-- Custom JS Scripts -->
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    let sectionsList = [];
+    let itemsBySectionCache = {};
+    let activeSectionId = null;
+
+    let itemModalInstance = null;
+    let priceModalInstance = null;
+    let sectionModalInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      itemModalInstance = new bootstrap.Modal(document.getElementById('itemModal'));
+      priceModalInstance = new bootstrap.Modal(document.getElementById('priceModal'));
+      sectionModalInstance = new bootstrap.Modal(document.getElementById('sectionModal'));
+
+      loadSections();
+
+      // Form event listeners
+      document.getElementById('itemForm').addEventListener('submit', handleItemFormSubmit);
+      document.getElementById('priceForm').addEventListener('submit', handlePriceFormSubmit);
+      document.getElementById('sectionForm').addEventListener('submit', handleSectionFormSubmit);
+
+      // Search filter within current section items
+      document.getElementById('inventoryItemSearch').addEventListener('input', (e) => {
+        filterCurrentSectionItems(e.target.value.toLowerCase().trim());
+      });
+    });
+
+    async function loadSections() {
+      try {
+        const res = await apiGet('/items/sections');
+        if (res.success) {
+          sectionsList = res.sections || [];
+          document.getElementById('totalSectionsCount').textContent = `${sectionsList.length} Categories`;
+
+          populateSectionSelects(sectionsList);
+          renderSectionTabs(sectionsList);
+
+          if (sectionsList.length > 0) {
+            // Select first section by default if activeSectionId is null or invalid
+            const defaultSection = sectionsList.find(s => s.section_id === activeSectionId) || sectionsList[0];
+            switchSection(defaultSection.section_id);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load sections:', err);
+        showToast(err.message || 'Failed to load inventory sections', 'danger');
+      }
+    }
+
+    function populateSectionSelects(sections) {
+      const select = document.getElementById('itemSectionSelect');
+      select.innerHTML = sections.map(s => `
+        <option value="${s.section_id}">${s.section_name}</option>
+      `).join('');
+    }
+
+    function renderSectionTabs(sections) {
+      const nav = document.getElementById('sectionTabsNav');
+      if (sections.length === 0) {
+        nav.innerHTML = '<li class="nav-item"><span class="nav-link active">No Sections</span></li>';
+        return;
+      }
+
+      nav.innerHTML = sections.map((s, index) => {
+        const isActive = activeSectionId ? s.section_id === activeSectionId : index === 0;
+        return `
+          <li class="nav-item" role="presentation">
+            <button class="nav-link ${isActive ? 'active fw-bold' : 'text-dark'}" 
+                    id="tab-btn-${s.section_id}" 
+                    type="button" 
+                    role="tab" 
+                    onclick="switchSection(${s.section_id})">
+              <i class="bi ${getSectionIcon(s.section_name)} me-1"></i>
+              ${escapeHtml(s.section_name)}
+              <span class="badge ${isActive ? 'bg-primary' : 'bg-light text-muted border'} rounded-pill ms-1">${s.item_count || 0}</span>
+            </button>
+          </li>
+        `;
+      }).join('');
+    }
+
+    function getSectionIcon(name) {
+      const n = (name || '').toLowerCase();
+      if (n.includes('utensil')) return 'bi-cup-hot';
+      if (n.includes('cloth')) return 'bi-layers';
+      if (n.includes('electric') || n.includes('light')) return 'bi-lightning-charge';
+      if (n.includes('furniture') || n.includes('chair')) return 'bi-lamp';
+      if (n.includes('decor')) return 'bi-stars';
+      return 'bi-box-seam';
+    }
+
+    async function switchSection(sectionId) {
+      activeSectionId = sectionId;
+
+      // Update active tab buttons visual state
+      const buttons = document.querySelectorAll('#sectionTabsNav .nav-link');
+      buttons.forEach(btn => btn.classList.remove('active', 'fw-bold'));
+      const activeBtn = document.getElementById(`tab-btn-${sectionId}`);
+      if (activeBtn) activeBtn.classList.add('active', 'fw-bold');
+
+      // Clear search
+      document.getElementById('inventoryItemSearch').value = '';
+
+      const content = document.getElementById('sectionTabContent');
+      content.innerHTML = `
+        <div class="text-center py-5 text-muted">
+          <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+          <div class="small mt-2">Loading items...</div>
+        </div>
+      `;
+
+      try {
+        const res = await apiGet(`/items/by-section/${sectionId}`);
+        if (res.success) {
+          itemsBySectionCache[sectionId] = res.items || [];
+          renderItemsTable(res.items || [], sectionId);
+        }
+      } catch (err) {
+        console.error('Error fetching section items:', err);
+        content.innerHTML = `
+          <div class="text-center py-4 text-danger">
+            <i class="bi bi-exclamation-triangle fs-3 d-block mb-1"></i>
+            Error loading section items: ${err.message}
+          </div>
+        `;
+      }
+    }
+
+    function renderItemsTable(items, sectionId) {
+      const content = document.getElementById('sectionTabContent');
+      const currentSection = sectionsList.find(s => s.section_id === sectionId);
+
+      if (!items || items.length === 0) {
+        content.innerHTML = `
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-box2 fs-1 d-block mb-2 text-secondary"></i>
+            <h6 class="fw-semibold">No items registered in "${currentSection ? currentSection.section_name : 'this section'}"</h6>
+            <p class="small text-muted mb-3">Add items with their daily rental rates to start renting them out.</p>
+            <button class="btn btn-sm btn-primary" onclick="openAddItemModal(${sectionId})" style="background-color: #0f3460; border-color: #0f3460;">
+              <i class="bi bi-plus-circle me-1"></i> Add First Item
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      content.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h6 class="fw-bold mb-0 text-dark">${currentSection ? currentSection.section_name : 'Section'} Items</h6>
+            <small class="text-muted">${currentSection && currentSection.description ? currentSection.description : 'List of rental items and availability'}</small>
+          </div>
+          <button class="btn btn-sm btn-outline-primary" onclick="openAddItemModal(${sectionId})">
+            <i class="bi bi-plus-circle me-1"></i> Add Item to ${currentSection ? currentSection.section_name : 'Section'}
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-custom">
+            <thead>
+              <tr>
+                <th style="width: 70px;">ID</th>
+                <th>Item Name</th>
+                <th>Price / Day</th>
+                <th class="text-center">Total Stock</th>
+                <th class="text-center">Available Stock</th>
+                <th>Stock Status</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="items-table-body">
+              ${items.map(item => getItemRowHtml(item)).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function getItemRowHtml(item) {
+      const isLowStock = item.total_quantity > 0 && item.available_quantity < (item.total_quantity * 0.10);
+      const isOutOfStock = item.available_quantity === 0;
+
+      let stockBadge = '<span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle me-1"></i>In Stock</span>';
+      if (isOutOfStock) {
+        stockBadge = '<span class="badge bg-danger text-white"><i class="bi bi-x-circle me-1"></i>Out of Stock</span>';
+      } else if (isLowStock) {
+        stockBadge = '<span class="badge bg-warning-subtle text-danger fw-bold"><i class="bi bi-exclamation-triangle me-1"></i>Low Stock (&lt;10%)</span>';
+      }
+
+      return `
+        <tr id="item-row-${item.item_id}">
+          <td><span class="badge bg-light text-secondary border">#${item.item_id}</span></td>
+          <td>
+            <div class="fw-bold text-dark item-name-text">${escapeHtml(item.item_name)}</div>
+          </td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <span class="fw-bold text-primary">${formatCurrency(item.price_per_day)}</span>
+              <button class="btn btn-sm btn-outline-secondary p-0 px-1 border-0" onclick="openPriceModal(${item.item_id}, '${escapeQuote(item.item_name)}', ${item.price_per_day})" title="Quick Edit Price">
+                <i class="bi bi-pencil-square text-muted"></i>
+              </button>
+            </div>
+          </td>
+          <td class="text-center fw-semibold text-secondary">${item.total_quantity}</td>
+          <td class="text-center">
+            <span class="fw-bold ${isLowStock ? 'text-danger' : 'text-dark'}">${item.available_quantity}</span>
+            <span class="text-muted small">/ ${item.total_quantity}</span>
+          </td>
+          <td>${stockBadge}</td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-primary py-1 px-2" onclick="openPriceModal(${item.item_id}, '${escapeQuote(item.item_name)}', ${item.price_per_day})" title="Edit Price">
+              <i class="bi bi-currency-rupee"></i> Price
+            </button>
+            <button class="btn btn-sm btn-outline-secondary py-1 px-2 ms-1" onclick="openEditItemModal(${item.item_id})" title="Edit Details">
+              <i class="bi bi-pencil"></i> Edit
+            </button>
+          </td>
+        </tr>
+      `;
+    }
+
+    function filterCurrentSectionItems(query) {
+      const items = itemsBySectionCache[activeSectionId] || [];
+      const tbody = document.getElementById('items-table-body');
+      if (!tbody) return;
+
+      if (!query) {
+        tbody.innerHTML = items.map(item => getItemRowHtml(item)).join('');
+        return;
+      }
+
+      const filtered = items.filter(i => (i.item_name || '').toLowerCase().includes(query));
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center py-4 text-muted">
+              No items matching "${escapeHtml(query)}" in this section.
+            </td>
+          </tr>
+        `;
+      } else {
+        tbody.innerHTML = filtered.map(item => getItemRowHtml(item)).join('');
+      }
+    }
+
+    // Add / Edit Item Modal Handlers
+    function openAddItemModal(defaultSectionId = null) {
+      document.getElementById('itemModalTitle').textContent = 'Add New Inventory Item';
+      document.getElementById('itemModalId').value = '';
+      document.getElementById('itemNameField').value = '';
+      document.getElementById('itemPriceField').value = '';
+      document.getElementById('itemTotalQtyField').value = '';
+      document.getElementById('itemModalQtyHint').classList.add('d-none');
+
+      const secSelect = document.getElementById('itemSectionSelect');
+      if (defaultSectionId) {
+        secSelect.value = defaultSectionId;
+      } else if (activeSectionId) {
+        secSelect.value = activeSectionId;
+      }
+
+      itemModalInstance.show();
+    }
+
+    function openEditItemModal(itemId) {
+      const items = itemsBySectionCache[activeSectionId] || [];
+      const item = items.find(i => i.item_id === itemId);
+      if (!item) return;
+
+      document.getElementById('itemModalTitle').textContent = 'Edit Item Details';
+      document.getElementById('itemModalId').value = item.item_id;
+      document.getElementById('itemNameField').value = item.item_name;
+      document.getElementById('itemPriceField').value = item.price_per_day;
+      document.getElementById('itemTotalQtyField').value = item.total_quantity;
+      document.getElementById('itemSectionSelect').value = item.section_id;
+      document.getElementById('itemModalQtyHint').classList.remove('d-none');
+
+      itemModalInstance.show();
+    }
+
+    async function handleItemFormSubmit(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById('saveItemBtn');
+      const origText = saveBtn.textContent;
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      const itemId = document.getElementById('itemModalId').value;
+      const section_id = document.getElementById('itemSectionSelect').value;
+      const item_name = document.getElementById('itemNameField').value.trim();
+      const price_per_day = parseFloat(document.getElementById('itemPriceField').value);
+      const total_quantity = parseInt(document.getElementById('itemTotalQtyField').value, 10);
+
+      try {
+        if (itemId) {
+          // Update item
+          const res = await apiPut(`/items/${itemId}`, { section_id, item_name, price_per_day, total_quantity });
+          if (res.success) {
+            showToast('Item updated successfully!', 'success');
+            itemModalInstance.hide();
+            await loadSections(); // refresh counts
+            switchSection(activeSectionId);
+          }
+        } else {
+          // Create item
+          const res = await apiPost('/items', { section_id, item_name, price_per_day, total_quantity });
+          if (res.success) {
+            showToast('Item created successfully!', 'success');
+            itemModalInstance.hide();
+            await loadSections(); // refresh counts
+            switchSection(Number(section_id));
+          }
+        }
+      } catch (err) {
+        console.error('Save item error:', err);
+        showToast(err.message || 'Failed to save item', 'danger');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = origText;
+      }
+    }
+
+    // Quick Price Modal Handlers
+    function openPriceModal(itemId, itemName, currentPrice) {
+      document.getElementById('priceItemId').value = itemId;
+      document.getElementById('priceItemName').textContent = itemName;
+      document.getElementById('quickPriceField').value = currentPrice;
+      priceModalInstance.show();
+    }
+
+    async function handlePriceFormSubmit(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById('savePriceBtn');
+      saveBtn.disabled = true;
+
+      const itemId = document.getElementById('priceItemId').value;
+      const price_per_day = parseFloat(document.getElementById('quickPriceField').value);
+
+      try {
+        const res = await apiPatch(`/items/${itemId}/price`, { price_per_day });
+        if (res.success) {
+          showToast('Price updated successfully!', 'success');
+          priceModalInstance.hide();
+          switchSection(activeSectionId);
+        }
+      } catch (err) {
+        console.error('Update price error:', err);
+        showToast(err.message || 'Failed to update price', 'danger');
+      } finally {
+        saveBtn.disabled = false;
+      }
+    }
+
+    // Add Section Modal Handlers
+    function openAddSectionModal() {
+      document.getElementById('sectionNameField').value = '';
+      document.getElementById('sectionDescField').value = '';
+      sectionModalInstance.show();
+    }
+
+    async function handleSectionFormSubmit(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById('saveSectionBtn');
+      saveBtn.disabled = true;
+
+      const section_name = document.getElementById('sectionNameField').value.trim();
+      const description = document.getElementById('sectionDescField').value.trim();
+
+      try {
+        const res = await apiPost('/items/sections', { section_name, description });
+        if (res.success) {
+          showToast('Section created successfully!', 'success');
+          sectionModalInstance.hide();
+          await loadSections();
+          if (res.section && res.section.section_id) {
+            switchSection(res.section.section_id);
+          }
+        }
+      } catch (err) {
+        console.error('Create section error:', err);
+        showToast(err.message || 'Failed to create section', 'danger');
+      } finally {
+        saveBtn.disabled = false;
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function escapeQuote(str) {
+      if (!str) return '';
+      return String(str).replace(/'/g, "\\'");
+    }
+  </script>
+</body>
+</html>
