@@ -38,10 +38,30 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Health check / welcome route on /api
-app.get('/api', (req, res) => {
-  res.status(200).json({
-    message: 'Rental Management API running'
-  });
+app.get('/api', async (req, res) => {
+  try {
+    const pool = require('./config/db');
+    const [rows] = await pool.query('SELECT 1 + 1 AS test');
+    res.status(200).json({
+      success: true,
+      message: 'Rental Management API running',
+      database: 'Connected successfully to ' + (process.env.DB_NAME || 'rental_db'),
+      env_check: {
+        host: process.env.DB_HOST ? 'Set' : 'Missing',
+        user: process.env.DB_USER ? 'Set' : 'Missing',
+        port: process.env.DB_PORT || 3306,
+        ssl: process.env.DB_SSL || 'unset'
+      }
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'API running but Database connection failed',
+      error: err.message,
+      code: err.code,
+      hint: 'Check DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT, and DB_SSL in Vercel Environment Variables'
+    });
+  }
 });
 
 // API Routes Mounting
