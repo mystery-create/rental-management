@@ -69,22 +69,24 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start Express server
+// Start Express server only when run directly (not in Vercel serverless environment)
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(`=============================================`);
-  console.log(` Warehouse & Rental Management API`);
-  console.log(` Server running on http://localhost:${PORT}`);
-  console.log(` Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`=============================================`);
-});
-
-// Graceful shutdown handling
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received. Shutting down gracefully...');
-  server.close(() => {
-    console.log('Process terminated.');
+if (!process.env.VERCEL) {
+  const server = app.listen(PORT, () => {
+    console.log(`=============================================`);
+    console.log(` Warehouse & Rental Management API`);
+    console.log(` Server running on http://localhost:${PORT}`);
+    console.log(` Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`=============================================`);
   });
-});
+
+  // Graceful shutdown handling
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received. Shutting down gracefully...');
+    server.close(() => {
+      console.log('Process terminated.');
+    });
+  });
+}
 
 module.exports = app;
